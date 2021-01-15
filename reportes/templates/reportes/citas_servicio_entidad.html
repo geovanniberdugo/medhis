@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Total de citas por servicio y entidad{% endblock title %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Total de citas por servicio y entidad" %}</h1>
+</header>
+
+<mh-citas-servicio-entidad url="{% url 'reportes:citas-servicio-entidad-print' %}"></mh-citas-servicio-entidad>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-citas-servicio-entidad.js' %}"></script>
+{% endblock js %}

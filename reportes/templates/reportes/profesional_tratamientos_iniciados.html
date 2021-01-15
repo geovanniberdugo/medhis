@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Tratamientos iniciados por profesional{% endblock title %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+{% endblock css %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Tratamientos iniciados por profesional" %}</h1>
+    <small>Muestra los tratamientos del profesional que iniciaron en el rango de fechas escogido.</small>
+</header>
+
+<mh-tratamientos-iniciados-profesional></mh-tratamientos-iniciados-profesional>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-tratamientos-iniciados-profesional.js' %}"></script>
+{% endblock js %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load static i18n l10n %}
+
+{% block imports %}
+<link rel="import" href="{% static 'pages/medhis-historia-detalle.html' %}"> 
+{% endblock imports %} 
+
+{% block content %}
+<header class="header-title">
+    <h1>{{ historia.formato.nombre }}</h1>
+</header>
+
+<medhis-historia-detalle encuentro-id="{{ historia.id|unlocalize }}"></medhis-historia-detalle>
+{% endblock content %}

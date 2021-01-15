@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+<style>
+    table {
+        border-collapse: collapse;
+    }
+
+    table, th, td {
+        border: 1px solid grey;
+    }
+
+    th {
+        background-color: #d3d3d396 !important;
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="print-card">
+    <h1 class="center">Agenda diaria</h1>
+
+    <p><b>Fecha:</b> {{ fecha }} {% if medico %} <br> <b>Medico:</b> {{ medico|title }}{% endif %} {% if sucursal %} <br> <b>Sucursal:</b> {{ sucursal|title }}{% endif %}</p>
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Hora</th>
+                <th scope="col">Paciente</th>
+                <th scope="col">Servicio</th>
+                <th scope="col">IPS</th>
+                <th scope="col">Empresa</th>
+                {% if not medico %}<th scope="col">Medico</th>{% endif %}
+                <th scope="col">Estado</th>
+                <th scope="col">Coopago</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cita in citas %}
+            <tr>
+                <td>{{ cita.inicio|time:"h:iA" }}</td>
+                <td>{{ cita.paciente|title }}</td>
+                <td>{{ cita.servicio|title }}</td>
+                <td>{{ cita.institucion|title }}</td>
+                <td>{{ cita.empresa|title }}</td>
+                {% if not medico %}<td>{{ cita.medico|title }}</td>{% endif %}
+                <td>{{ cita.estado_display }}</td>
+                <td>{{ cita.servicio_prestado.coopago|intcomma }}</td>
+            </tr>
+            {% empty %}
+            {% if medico %}
+            <tr><td class="center upper" colspan="7">El medico no tiene citas para este dia</td></tr>
+            {% else %}
+            <tr><td class="center upper" colspan="8">No hay citas agendadas</td></tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<paper-fab id="print-button" class="hidden-print" icon="my-icons:print"></paper-fab>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-print-agenda-diaria.js' %}"></script>
+{% endblock js %}

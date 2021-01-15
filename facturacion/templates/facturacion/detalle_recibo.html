@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% load l10n static %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+<style>
+    .logo-history {
+        display: grid;
+        text-align: center;
+        grid-template-columns: 1fr 1fr 1fr; /* 3 cols */ 
+    }    
+
+    .doctor-signature {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 2 cols */
+    }
+
+    p {
+        margin: 1px 0;
+    }
+
+    table {
+        border-spacing: 0;
+        width: 100%;
+    }
+
+    table tr>td {
+        padding-bottom: 10px;
+    }
+
+    th {
+        text-align: left;
+    }
+
+    .info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    @media print {
+        * {
+            font-size: 12px;
+        }        
+        
+        .print-card {
+            width: 220px;
+            max-width: 220px;
+        }
+
+        td,
+        th,
+        tr,
+        table {
+            border-top: 1px solid black;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        td {
+            font-size: 16px;
+        }
+
+        .logo-history {
+            grid-template-columns: 1fr 2fr; /* 2 cols */ 
+            -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
+            filter: grayscale(100%);
+        }
+
+        .logo-text {
+            font-size: 10px;           
+        }        
+
+        .info {
+            display: grid;
+            grid-template-columns: 1fr;
+        }        
+
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="print-card">
+
+    <div class="logo-history">
+        {% with institucion=recibocaja.servicio_prestado.orden.institucion %}
+        <div>
+            {% if institucion.logo %}
+            <img src={{ institucion.logo.url }} alt="Logo institucion" width="80" height="30">
+            {% endif %}
+        </div>
+        <div class="logo-text">
+            <strong class="big-text">{{ institucion.razon_social }}</strong><br>
+            <strong class="big-text">{{ institucion.get_tipo_documento_display }} {{ institucion.identificacion }}</strong><br>
+            <strong class="small-text">{{ recibocaja.sucursal.direccion }}</strong><br>
+            <strong class="small-text">{% firstof recibocaja.sucursal.telefono "" %}</strong>
+        </div>
+        {% endwith %}
+    </div>
+    <hr>
+
+    <div class="info">
+        {% with tratamiento=recibocaja.servicio_prestado %}
+        <p><strong>Cliente:</strong> {{ tratamiento.orden.paciente|title }}</p>
+        <p><strong>Convenio:</strong> {{ tratamiento.orden.plan|title }}</p>
+        <p><strong>Recibo de Caja Nº:</strong> {{ recibocaja.numero }}</p>
+        <p><strong>Fecha Generado:</strong> {{ recibocaja.fecha|date:"SHORT_DATE_FORMAT" }}</p>
+        <p><strong>Servicio:</strong> {{ tratamiento.servicio|title }}</p>
+        {% endwith %}
+    </div>
+    <br>
+    <table>
+        <tbody>
+            <tr>
+                <th>Forma de Pago</th>
+                <td class="center">{{ recibocaja.get_forma_pago_display }}</td>
+            </tr>
+            <tr>
+                <th>Coopago</th>
+                <td class="center">{{ recibocaja.servicio_prestado.coopago|floatformat }}</td>
+            </tr>
+            <tr>
+                <th>Pagado</th>
+                <td class="center">{{ recibocaja.valor|floatformat }}</td>
+            </tr>
+        </tbody>
+    </table>
+    <br>
+    <div>
+        <p><strong>Detalle: </strong>{{ recibocaja.detalle }}</p> 
+    </div>
+    <br>
+    <div class="doctor-signature">
+        <div></div>
+        <div>
+            <p><strong>Recibe:</strong></p>
+            <br><br>
+            <hr>
+            <p><strong>Nombre</strong></p>
+            <p><strong>C.C.</strong></p>
+        </div>
+    </div>
+
+</div>
+
+<paper-fab id="print-button" class="hidden-print" icon="my-icons:print"></paper-fab>
+{% endblock content %}
+
+{% block js %}
+<script src="{% static 'js/print.js' %}"></script>
+{% endblock js %}

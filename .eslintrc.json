@@ -1,0 +1,41 @@
+{
+    "extends": "airbnb-base",
+    "plugins": [
+        "html",
+        "graphql"
+    ],
+    "env": {
+        "browser": true,
+        "jquery": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 8,
+        "ecmaFeatures": {
+            "experimentalObjectRestSpread": true
+        }
+    },
+    "globals": {
+        "Medhis": false,
+        "Apollo": false,
+        "moment": false,
+        "fabric": false,
+        "Vaadin": false,
+        "Polymer": false,
+        "setFormErrors": false,
+        "formatCurrency": false,
+        "notifyErrorMessage": false,
+        "setDatePickerLocale": false,
+        "notifySuccessMessage": false
+    },
+    "rules": {
+        "no-return-assign": 0,
+        "indent": ["error", 4],
+        "no-underscore-dangle": "off",
+        "class-methods-use-this": "off",
+        "max-len": ["error", { "code": 120, "ignoreComments": true }],
+        "graphql/template-strings": ["error", {
+            "env": "apollo",
+            "tagName": "gql"
+        }]
+    }
+}

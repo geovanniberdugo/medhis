@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load i18n static l10n %}
+
+{% block title %}Tratamientos{% endblock title %}
+
+{% block content %}
+<mh-tratamientos pacienteid="{{ paciente.id|unlocalize }}" certificadoasistenciaurl="{% url 'reportes:certificado-asistencia' %}"></mh-tratamientos>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-tratamientos.js' %}"></script>
+{% endblock js %}

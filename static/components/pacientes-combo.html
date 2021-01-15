@@ -1,0 +1,113 @@
+<link rel="import" href="../bower_components/vaadin-combo-box/theme/material/vaadin-combo-box.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<script>
+    /**
+        * `pacientes-combo` Combo-box que permite filtrar pacientes.
+        *
+        * @summary ShortDescription.
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class PacientesCombo extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'pacientes-combo';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Termino de busqueda
+                    */
+                _searchTerm: {
+                    type: Object,
+                    value: () => { },
+                },
+
+                /**
+                    * Indica si el combo es requerido
+                    */
+                required: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                /**
+                    * Indica si el combo se muestra
+                    */
+                hidden: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                value: {
+                    type: String,
+                    notify: true,
+                },
+
+                /**
+                    * Item seleccionado
+                    */
+                selectedItem: {
+                    type: Object,
+                    notify: true,
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+
+                    vaadin-combo-box {
+                        width: 100%;
+                    }
+                </style>
+
+                <graphql-query result="{{result}}" variables="[[_searchTerm]]" defer>
+                    query pacientes($term: String!) {
+                        pacientes(search: $term) {
+                            results {
+                                id
+                                nombreCompleto
+                                numeroDocumento
+                            }
+                        }
+                    }
+                </graphql-query>
+
+                <vaadin-combo-box label="Paciente" required="[[required]]" hidden="[[hidden]]"
+                    item-label-path="nombreCompleto" item-value-path="id" 
+                    on-filter-changed="_searchPaciente" filtered-items="[[result.pacientes.results]]"
+                    value="{{value}}" selected-item="{{selectedItem}}">
+                    <template>[[item.numeroDocumento]] - [[item.nombreCompleto]]</template>
+                </vaadin-combo-box>
+            `;
+        }
+
+        /**
+            * Buscar pacientes
+            */
+        _searchPaciente(e) {
+            const term = e.detail.value;
+            this._debouncer = Polymer.Debouncer.debounce(
+                this._debouncer,
+                Polymer.Async.timeOut.after(500),
+                () => { this._searchTerm = term ? { term } : {}; },
+            );
+        }
+    }
+
+    window.customElements.define(PacientesCombo.is, PacientesCombo);
+</script>

@@ -1,0 +1,491 @@
+{% load i18n waffle_tags static %}
+
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <title>Medhis - {% block title %}{% endblock title %}</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Load webcomponents-loader.js to check and load any polyfills your browser needs -->
+        {% if not polymer3 %}
+        <script src="/static/js/apollo-client.js"></script>
+        <script src="/static/bower_components/webcomponentsjs/webcomponents-loader.js"></script>
+        <link rel="import" href="/static/elements.html">
+        {% endif %}
+        {% block imports %}{% endblock imports %}
+
+        <custom-style>
+            <style is="custom-style">
+                body {
+                    margin: 0;
+                    font-family: 'Roboto', 'Noto', sans-serif;
+                    background-color: #f1f1f1;
+
+                    --app-primary-color: #4285f4;
+                    --app-secondary-color: var(--accent-color);
+                    --success-color: #64c93c;
+                }
+
+                a {
+                    text-decoration: none;
+                    color: inherit;
+                }
+
+                app-drawer-layout {
+                    position: var(--layout-fit_-_position);
+                    top: var(--layout-fit_-_top);
+                    right: var(--layout-fit_-_right);
+                    bottom: var(--layout-fit_-_bottom);
+                    left: var(--layout-fit_-_left);
+                }
+
+                app-header {
+                    color: #fff;
+                    background-color: var(--app-primary-color);
+                }
+
+                app-header paper-icon-button {
+                    --paper-icon-button-ink-color: white;
+                }
+
+                search-box {
+                    flex: 2;
+                }
+
+                app-toolbar span {
+                    flex: 1;
+                }
+
+                app-toolbar [main-title] {
+                    pointer-events: none;
+                }
+
+                main {
+                    padding: 24px;
+                    position: relative;
+                    min-height: calc(100% - 65px);
+                }
+
+                paper-button {
+                    background: var(--app-primary-color);
+                    color: white;
+                }
+
+                header {
+                    margin-bottom: 1rem;
+                    padding: 1rem 1rem 0;
+                    position: relative;
+                }
+
+                header > h1 {
+                    margin: 0;
+                    color: #676767;
+                    line-height: 100%;
+                    font-weight: 400;
+                    font-size: 1.15rem;
+                    text-transform: uppercase;
+                }
+
+                header > small {
+                    font-size: 1rem;
+                    display: block;
+                    margin-top: .8rem;
+                    color: #959595;
+                }
+
+                .card {
+                    padding: 16px;
+                    color: #757575;
+                    border-radius: 5px;
+                    background-color: #fff;
+                    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+                }
+
+                .header-title {
+                    margin-bottom: 1rem;
+                    padding: 1rem 1rem 0;
+                    position: relative;
+                }
+
+                .header-title > h1 {
+                    margin: 0;
+                    color: #676767;
+                    line-height: 100%;
+                    font-weight: 400;
+                    font-size: 1.15rem;
+                    text-transform: uppercase;
+                }
+
+                .header-title > small {
+                    font-size: 1rem;
+                    display: block;
+                    margin-top: .8rem;
+                    color: #959595;
+                }
+                
+            </style>    
+        </custom-style>
+
+        {% block css %}{% endblock css %}
+        {% include "_analytics.html" %}
+    </head>
+    <body>
+        <paper-toast id="baseToast"></paper-toast>
+        <graphql-client config='{"uri": "{% url 'common:graphql' %}", "credentials": "same-origin"}'></graphql-client>
+        <app-drawer-layout force-narrow fullbleed id="drawerLayout">
+            <app-drawer slot="drawer">
+                <div style="height: 100%; overflow: auto;">
+                    <app-menu selected="0">
+                        {% if perms.pacientes.can_add_paciente %}
+                        <a class="app-menu-item" href="{% url 'pacientes:crear' %}">
+                            <app-menu-icon-item icon="my-icons:person-add">{% trans "Crear paciente" %}</app-menu-icon-item>
+                        </a>                      
+                        {% endif %}
+                        {% if perms.historias.add_historia or perms.agenda.puede_ver_agenda %}
+                        <a class="app-menu-item" href="{% url 'agenda:listar' %}">
+                            <app-menu-icon-item icon="my-icons:assignment">{% trans "Agenda diaria" %}</app-menu-icon-item>
+                        </a>
+                        {% endif %}
+                        {% if perms.agenda.can_agendar_citas %}
+                        <app-submenu>
+                            <div class="app-menu-item" slot="submenu-trigger">
+                                <app-menu-icon-item icon="my-icons:event">{% trans "Agendar citas" %}</app-menu-icon-item>
+                                <iron-icon icon="my-icons:expand-more" class="expand-icon"></iron-icon>
+                            </div>
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'agenda:citas' %}?tipo=m">
+                                    <app-menu-icon-item icon="my-icons:camera-enhance">{% trans "Por Médico" %}</app-menu-icon-item>
+                                </a>
+                                {% for agenda in agendas  %}
+                                <a class="app-menu-item" href="{{ agenda.get_absolute_url }}">
+                                    {{ agenda.nombre }}
+                                </a>
+                                {% endfor %}  
+                            </app-menu>
+                        </app-submenu>          
+                        {% endif %}
+                        {% if perms.facturacion %}
+                        <app-submenu>
+                            <div class="app-menu-item" slot="submenu-trigger">
+                                <app-menu-icon-item icon="my-icons:attach-money">{% trans "Facturación" %}</app-menu-icon-item>
+                                <iron-icon icon="my-icons:expand-more" class="expand-icon"></iron-icon>
+                            </div>
+                            {% if perms.facturacion.can_facturar %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'facturacion:facturar-cliente' %}">
+                                    <app-menu-icon-item icon="my-icons:local-atm">{% trans "Facturar" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% switch "facturacion_siigo" %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'facturacion:siigo' %}">
+                                    <app-menu-icon-item icon="my-icons:local-atm">{% trans "Facturas a siigo" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endswitch %}
+                            {% endif %}
+                            {% if perms.facturacion.puede_generar_rips %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'facturacion:rips' %}">
+                                    <app-menu-icon-item icon="my-icons:description">{% trans "Generar RIPS" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.facturacion.can_contabilizar_recibo_caja %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'facturacion:contabilidad-recibos-caja' %}">
+                                    <app-menu-icon-item icon="my-icons:description">{% trans "Contabilización recibos caja" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.facturacion.can_cerrar_caja or perms.facturacion.can_see_todas_cajas %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'facturacion:cajas' %}">
+                                    <app-menu-icon-item icon="my-icons:description">{% trans "Cajas" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                        </app-submenu>
+                        {% endif %}
+                        {% if perms.pacientes.can_recibir_pacientes_terminaron_tratamiento or perms.pacientes.can_verificar_pacientes_terminaron_tratamiento %}
+                        <app-submenu>
+                            <div class="app-menu-item" slot="submenu-trigger">
+                                <app-menu-icon-item icon="my-icons:settings">{% trans "Auditorias" %}</app-menu-icon-item>
+                                <iron-icon icon="my-icons:expand-more" class="expand-icon"></iron-icon>
+                            </div>
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'auditorias:pacientes-terminaron-tratamientos' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Pacientes terminaron tratamiento" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                        </app-submenu>
+                        {% endif %}
+                        {% if perms.agenda.can_generar_indicadores_resolucion_256 %}
+                        <app-submenu>
+                            <div class="app-menu-item" slot="submenu-trigger">
+                                <app-menu-icon-item icon="my-icons:settings">{% trans "Indicadores" %}</app-menu-icon-item>
+                                <iron-icon icon="my-icons:expand-more" class="expand-icon"></iron-icon>
+                            </div>
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'agenda:indicadores-resolucion-256' %}">
+                                    <app-menu-icon-item icon="my-icons:timeline">{% trans "Resolución 256" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:oportunidad-citas' %}">
+                                    <app-menu-icon-item icon="my-icons:assignment">{% trans "Oportunidad de citas" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:citas-servicio-entidad' %}">
+                                    <app-menu-icon-item icon="my-icons:assignment">{% trans "Citas por servicio por entidad" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:ind-mortalidad-morbilidad' %}">
+                                    <app-menu-icon-item icon="my-icons:assignment">{% trans "Indicadores de mortalidad y morbilidad" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                        </app-submenu>
+                        {% endif %}
+                        {% if perms.reportes %}
+                        <app-submenu>
+                            <div class="app-menu-item" slot="submenu-trigger">
+                                <app-menu-icon-item icon="my-icons:settings">{% trans "Reportes" %}</app-menu-icon-item>
+                                <iron-icon icon="my-icons:expand-more" class="expand-icon"></iron-icon>
+                            </div>
+                            {% if perms.reportes.can_see_citas_paciente %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:relacion-citas-paciente' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Citas por paciente" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.reportes.can_see_citas_no_cumplidas %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:citas-no-cumplidas' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Citas no cumplidas" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.reportes.can_see_asignacion_citas %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:asignacion-citas' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Verificación de programación de citas por entidad" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.reportes.can_see_medicos_ordenan_tratamiento %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:medicos-ordenan-tratamiento' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Medicos que ordenan tratamiento" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.reportes.can_see_tratamientos_terminado_profesional %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:relacion-citas-profesional' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Tratamientos terminados por profesional" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.reportes.can_see_tratamientos_pago_profesional %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:tratamientos-pago-terapeutas' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Tratamientos para pagos de terapeutas" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:tratamientos-pago-medicos' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Tratamientos para pagos de medicos" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.reportes.can_see_tratamientos_no_terminado_profesional %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:tratamientos-no-terminados-profesional' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Tratamientos no terminados por profesional" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.reportes.can_see_tratamientos_iniciados_profesional %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:tratamientos-iniciados-profesional' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Tratamientos iniciados por profesional" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.reportes.can_see_tratamientos_facturado_entidad %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:tratamientos-facturados-entidad' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Tratamientos facturados por entidad" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.reportes.can_see_tratamientos_no_facturado_entidad %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:tratamientos-no-facturados-entidad' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Tratamientos no facturados por entidad" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.reportes.can_see_relacion_facturas %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:relacion-facturas' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Relación de facturas" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.reportes.can_see_relacion_recibos_caja %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'reportes:recibos-caja' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Relación de recibos de caja" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                        </app-submenu>
+                        {% endif %}
+                        {% if tiene_permiso_administrativo %}
+                        <app-submenu>
+                            <div class="app-menu-item" slot="submenu-trigger">
+                                <app-menu-icon-item icon="my-icons:settings">{% trans "Configuración" %}</app-menu-icon-item>
+                                <iron-icon icon="my-icons:expand-more" class="expand-icon"></iron-icon>
+                            </div>
+                            {% if perms.servicios.add_servicio %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'servicios:listar' %}">
+                                    <app-menu-icon-item icon="my-icons:payment">{% trans "Servicios" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.organizacional.add_sucursal %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'organizacional:listar-sucursales' %}">
+                                    <app-menu-icon-item icon="my-icons:domain">{% trans "Sucursales" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.organizacional.add_institucion %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'organizacional:listar-instituciones' %}">
+                                    <app-menu-icon-item icon="my-icons:account-balance">{% trans "Instituciones" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.servicios.add_cliente %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'servicios:listar-clientes' %}">
+                                    <app-menu-icon-item icon="my-icons:location-city">{% trans "Empresas" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.servicios.add_tarifa %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'servicios:listar-tarifas' %}">
+                                    <app-menu-icon-item icon="my-icons:location-city">{% trans "Tarifas" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.organizacional.add_horarioatencion %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'organizacional:horario-atencion' %}">
+                                    <app-menu-icon-item icon="my-icons:alarm">{% trans "Horario de atención" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.organizacional.add_empleado %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'organizacional:empleados' %}">
+                                    <app-menu-icon-item icon="my-icons:alarm">{% trans "Usuarios administrativo" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                            {% if perms.organizacional.can_add_empleado %}
+                            <app-menu slot="submenu-content">
+                                <a class="app-menu-item" href="{% url 'organizacional:medicos' %}">
+                                    <app-menu-icon-item icon="my-icons:alarm">{% trans "Medicos" %}</app-menu-icon-item>
+                                </a>
+                            </app-menu>
+                            {% endif %}
+                        </app-submenu>
+                        {% endif %}
+                    </app-menu>
+                </div>
+            </app-drawer>
+
+            <app-header-layout has-scrolling-region>
+                <app-header slot="header" condenses fixed effects="waterfall">
+                    <app-toolbar>
+                        <paper-icon-button drawer-toggle icon="my-icons:menu"></paper-icon-button>
+                        <div main-title>MEDHIS</div>
+                        <search-box placeholder="Buscar pacientes"></search-box>
+                        <span></span>
+                        <a href="{% url 'common:home' %}" tabindex="-1">
+                            <paper-icon-button icon="my-icons:home"></paper-icon-button>
+                        </a>
+                        <a href="{% url 'logout' %}" tabindex="-1">
+                            <paper-icon-button icon="my-icons:exit-to-app"></paper-icon-button>
+                        </a>
+                    </app-toolbar>
+                </app-header>
+
+                <main>
+                    {% block content %}{% endblock content %}
+                </main>
+            </app-header-layout>
+        </app-drawer-layout>
+
+        {% block dialogs %}{% endblock dialogs %}
+
+        {% if polymer3 %}
+        <script src="{% static 'node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js' %}"></script>
+        {% endif %}
+        {% block js%}{% endblock js%}
+        <script>
+            (function() {
+                document.querySelector('search-box').addEventListener('enter', function(e) {
+                    window.location = '{% url "pacientes:listar" %}?search=' + e.detail;
+                });
+
+                const toast = document.getElementById('baseToast');
+                document.body.addEventListener('notify-toast', function(e) {
+                    toast.text = e.detail.text;
+                    setToastStyle(toast);
+                    toast.open();
+                });
+
+                document.body.addEventListener('notify-toast-error', function(e) {
+                    toast.text = e.detail.text;
+                    setErrorStyle(toast);
+                    toast.open();
+                });
+
+                document.body.addEventListener('notify-toast-form-error', function() {
+                    toast.text = 'Hubo un error en el formulario por favor verifica.';
+                    setErrorStyle(toast);
+                    toast.open();
+                });
+
+                document.body.addEventListener('notify-toast-success', function(e) {
+                    toast.text = e.detail.text;
+                    setSuccesStyle(toast);
+                    toast.open();
+                })
+
+                function setToastStyle(toast, backgroundColor, color) {
+                    toast.style.setProperty('--paper-toast-background-color', backgroundColor || '#323232');
+                    toast.style.setProperty('--paper-toast-color', color || '#f1f1f1');
+                }
+
+                function setErrorStyle(toast) {
+                    setToastStyle(toast, getComputedStyle(document.body).getPropertyValue('--error-color'), 'white');
+                }
+
+                function setSuccesStyle(toast) {
+                    setToastStyle(toast, getComputedStyle(document.body).getPropertyValue('--success-color'), 'white');
+                }
+            })();            
+        </script>
+    </body>
+</html>

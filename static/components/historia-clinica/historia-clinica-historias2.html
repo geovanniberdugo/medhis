@@ -1,0 +1,152 @@
+<link rel="import" href="../../bower_components/vaadin-grid/theme/material/vaadin-grid.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-if.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../my-icons.html">
+
+<script src="../../bower_components/moment/min/moment.min.js"></script>
+<script>
+    /**
+    * `historia-clinica-historias` Historial de las historias clinicas de un paciente.
+    *
+    * @customElement
+    * @polymer
+    * @extends {Polymer.Element}
+    */
+    class HistoriaClinicaHistorias extends Polymer.Element {
+
+        static get is() { return 'historia-clinica-historias'; }
+
+        static get properties() {
+            return {
+                url: String,
+                paciente: {
+                    type: String,
+                    value: '',
+                },
+                result: {
+                    type: Object,
+                    readOnly: true,
+                },
+                sesion: {
+                    type: Number,
+                    value: NaN,
+                },
+                target: {
+                    type: String,
+                    value: '_blank',
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                        background-color: white;
+                    }
+                </style>
+
+                <graphql-query id="query" result="{{queryResult}}"
+                    variables="[[_setQueryVariables(paciente)]]">
+                    query historialPaciente($paciente: ID!){
+                        historias(paciente: $paciente) {
+                            results {
+                                id
+                                printUrl
+                                contenido
+                                detailUrl
+                                proveedor { id, nombreCompleto }
+                                formato { id, nombre }
+                                cita {
+                                    id
+                                    inicio
+                                    servicio { id, nombre }
+                                }
+                            }
+                        }
+                    }
+                </graphql-query>
+
+                <div class="content">
+                    <vaadin-grid items=[[queryResult.historias.results]]>
+                        <vaadin-grid-column>
+                            <template class="header">Fecha</template>
+                            <template>[[_formatFecha(item.cita.inicio)]]</template>
+                        </vaadin-grid-column>
+                        <vaadin-grid-column>
+                            <template class="header">Servicio</template>
+                            <template>[[_formatTextUpper(item.cita.servicio.nombre)]]</template>
+                        </vaadin-grid-column>
+                        <vaadin-grid-column>
+                            <template class="header">Formato</template>
+                            <template>[[_formatTextUpper(item.formato.nombre)]]</template>
+                        </vaadin-grid-column>
+                        <vaadin-grid-column>
+                            <template class="header">Medico</template>
+                            <template>[[_formatTextUpper(item.proveedor.nombreCompleto)]]</template>
+                        </vaadin-grid-column>             
+                        <vaadin-grid-column flex-grow="0">
+                            <template class="header"></template>
+                            <template>
+                                <div style="display: flex;">
+                                    <template is="dom-if" if="[[!_isActualSesion(item.cita.id)]]">
+                                        <a href="[[ item.detailUrl ]]" tabindex="-1" target="[[target]]">
+                                            <paper-icon-button icon="my-icons:remove-red-eye"></paper-icon-button>
+                                        </a>
+                                    </template>
+                                    <template is="dom-if" if="[[item.printUrl]]">
+                                        <a title="ver encuentro" href="[[item.printUrl]]" tabindex="-1">
+                                            <paper-icon-button icon="my-icons:print"></paper-icon-button>
+                                        </a>
+                                    </template>
+                                </div>
+                            </template>
+                        </vaadin-grid-column>
+                    </vaadin-grid>
+                </div>
+            `;
+        }
+
+        /**
+            * Setea la variable paciente para que se ejecute el query.
+            *
+            * @param {string} paciente Id del paciente.
+            */
+        _setQueryVariables(paciente) {
+            if (paciente) {
+                return { paciente };
+            }
+
+            return {};
+        }
+
+        /**
+        * Formatea la fecha.
+        */
+        _formatFecha(fecha) {
+            // return moment.utc(fecha).format('DD/MM/YYYY hh:mm A');
+            return moment(fecha).format('DD/MM/YYYY hh:mm A');
+        }
+
+        /**
+        * Verifica que el id de la sesion pasada, sea igual a la sesion actual.
+        */
+        _isActualSesion(sesionPk) {
+            return sesionPk === this.sesion;
+        }
+
+        /**
+        * Formatea el texto a mayuscula.
+        */
+        _formatTextUpper(text) {
+            return text.toUpperCase();
+        }
+
+    }
+
+    window.customElements.define(HistoriaClinicaHistorias.is, HistoriaClinicaHistorias);
+</script>

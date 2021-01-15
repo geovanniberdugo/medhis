@@ -1,0 +1,264 @@
+<script>
+    /** @namespace Medhis */
+    window.Medhis = window.Medhis || {};
+
+    /**
+     * Usado en los formularios que realizan operaciones de creación y edición de objetos.
+     * @polymer
+     * @mixinFunction
+     * @memberof Medhis
+     */
+    Medhis.CRUFormMixin = superclass => class extends superclass {
+        /**
+          * Object describing property-related metadata used by Polymer features
+          */
+        static get properties() {
+            return {
+                /** Indica si el formulario se esta mostrando. */
+                opened: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true,
+                },
+
+                /** Acción a realizar en el formulario. Puede ser Crear o Editar dependiendo del valor de id. */
+                accion: {
+                    type: String,
+                    value: 'Crear',
+                },
+
+                /** ID del objeto a editar. */
+                id: {
+                    type: String,
+                    value: '',
+                    observer: '_idChanged',
+                },
+
+                /** Datos del formulario. */
+                value: {
+                    type: Object,
+                    value: () => ({}),
+                },
+            };
+        }
+
+        /**
+        * Observer method for id property. Renderiza el formulario con los datos del objeto o vacio cuando
+        * el id es null y modifica la acción.
+        *
+        * @param {string} newValue Valor nuevo del id.
+        * @param {string} oldValue Valor viejo del id.
+        */
+        _idChanged(newValue, oldValue) {
+            let accion;
+            if (newValue) {
+                accion = 'Editar';
+                this._obtenerDatosObjeto(newValue);
+            } else {
+                accion = 'Crear';
+                this._cleanFormulario();
+            }
+
+            this.accion = accion;
+        }
+
+        /**
+         * Normaliza valores númericos. Si el valor es un string vacío se convierte a null.
+         *
+         * @param {string|number} value Valor a normalizar.
+         * @return {string|number|null} El valor normalizado.
+         */
+        _cleanNumber(value) {
+            if (value === '') return null;
+
+            return value;
+        }
+
+        /** Limpia el formulario. */
+        _cleanFormulario() {
+            this.value = {};
+        }
+
+        /**
+        * Despacha un evento si hubo un error por parte del servidor al momento de ejecutar alguna mutación.
+        *
+        * @event notify-toast-error
+        * @param {string} text Texto del error.
+        */
+        _dispatchErrorAdministrativo() {
+            this.dispatchEvent(new CustomEvent('notify-toast-error', {
+                bubbles: true,
+                composed: true,
+                detail: {
+                    text: 'Oops! Hubo un error por favor comunicate con un administrador.',
+                },
+            }));
+        }
+
+        /**
+         * Obtiene el cliente de Apollo. Lanza un error si el cliente no se encuentra definido.
+         *
+         * @throws {Error}
+         * @return {ApolloClient}
+         */
+        _getClient() {
+            if (!this.client) {
+                throw new Error('Client not defined!!');
+            }
+
+            return this.client;
+        }
+
+        /**
+         * Obtiene el nombre del resultado de la mutación para crear.
+         *
+         * @throws
+         * @return {string}
+         */
+        _getCreatedResultName() {
+            if (!this.createdResultName) {
+                throw new Error('createdResultName not defined!!');
+            }
+
+            return this.createdResultName;
+        }
+
+        /**
+         * Obtiene el nombre del resultado de la mutación para editar.
+         *
+         * @throws
+         * @return {string}
+         */
+        _getEditedResultName() {
+            if (!this.editedResultName) {
+                throw new Error('editedResultName not defined!!');
+            }
+
+            return this.editedResultName;
+        }
+
+        /**
+         * Obtiene el nombre del resultado de los datos del objeto.
+         *
+         * @throws
+         * @return {string}
+         */
+        _getObjectResultName() {
+            if (!this.objectResultName) {
+                throw new Error('objectResultName not defined!!');
+            }
+
+            return this.objectResultName;
+        }
+
+        /**
+        * Obtiene los datos del objeto.
+        *
+        * @param {number} id Id del objeto a buscar.
+        */
+        _obtenerDatosObjeto(id) {
+            const query = this.$['datos-objeto-query'];
+            query.variables = { id };
+            query.execute().result().then((result) => {
+                const data = result.data[this._getObjectResultName()];
+                if (data) {
+                    this._fillFormulario(data);
+                } else {
+                    this._cleanFormulario();
+                }
+            });
+        }
+
+        /**
+         * Realiza la mutación del objeto.
+         *
+         * @param {object} options Opciones para la mutación.
+         * @param {string} resultName Nombre del resultado en la mutación.
+         */
+        _mutateObject(options, resultName) {
+            Apollo.client.mutate(options)
+                .then((result) => {
+                    const data = result.data[resultName];
+                    if (data.ok) {
+                        this.id = '';
+                        this.opened = false;
+                        this._cleanFormulario();
+                    }
+                })
+                .catch((error) => {
+                    console.error(error);
+                    this._dispatchErrorAdministrativo();
+                });
+        }
+
+        /**
+         * Obtiene el nombre con el cual buscar el resultado de la mutación dependiendo de si esta creando o editando un objeto.
+         *
+         * @param {string} id
+         */
+        _getResultName(id) {
+            return (id ? this._getEditedResultName() : this._getCreatedResultName());
+        }
+
+        /**
+         * Obtiene las opciones para la mutación dependiendo de si se esta creando o editando un objeto.
+         *
+         * @param {string} id
+         * @param {object} value Datos del formulario.
+         */
+        _getMutationOptions(id, value) {
+            return (id ? this._editOptions(id, value) : this._createOptions(value));
+        }
+
+        /**
+         * Opciones de la mutación para crear el objeto. Debe ser implementado por los hijos.
+         *
+         * @param {object} value Datos del formulario.
+         * @throws {Error}
+         */
+        _createOptions(value) {
+            throw new Error('Not implemented!!');
+        }
+
+        /**
+         * Opciones de la mutación para editar el objeto. Debe ser implementado por los hijos.
+         *
+         * @param {string} id Id del objeto a editar.
+         * @param {object} value Datos del formulario.
+         * @throws {Error}
+         */
+        _editOptions(id, value) {
+            throw new Error('Not implemented!!');
+        }
+
+        /**
+         * Llena el formulario con la información del objeto.
+         *
+         * @param {object} data Datos del objeto para llenar el formulario.
+         * @throws {Error}
+         */
+        _fillFormulario(data) {
+            throw new Error('Not implemented!!');
+        }
+
+        /**
+        * Valida el formulario.
+        *
+        * @return {bool} true si es valido, de lo contrario retorna false.
+        */
+        validate() {
+            return this.$.form.validate();
+        }
+
+        /**
+        * Guarda la información del objeto.
+        */
+        save() {
+            if (this.validate()) {
+                const mutationOptions = this._getMutationOptions(this.id, this.value);
+                const resultName = this._getResultName(this.id);
+                this._mutateObject(mutationOptions, resultName);
+            }
+        }
+    }
+</script>

@@ -1,0 +1,28 @@
+{
+  "name": "medhis",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "ssh://git@bitbucket.org/ingeniarte/medhis.git",
+  "author": "IngeniarteSoft",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "lint": "eslint ./static",
+    "bundle": "npx rollup -c --watch"
+  },
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-graphql": "^1.5.0",
+    "eslint-plugin-html": "^4.0.2",
+    "eslint-plugin-import": "^2.7.0",
+    "rollup-plugin-node-resolve": "^4.0.0"
+  },
+  "dependencies": {
+    "apollo-cache-inmemory": "^1.4.2",
+    "apollo-client": "^2.4.12",
+    "apollo-link": "^1.2.8",
+    "apollo-link-error": "^1.1.7",
+    "apollo-link-http": "^1.5.11"
+  }
+}

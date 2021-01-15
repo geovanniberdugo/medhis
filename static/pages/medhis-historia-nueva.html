@@ -1,0 +1,224 @@
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../components/historia-clinica/historia-clinica2.html">
+<link rel="import" href="../components/paciente-info.html">
+
+<script src="../js/utils.js"></script>
+<script>
+    /**
+        * `medhis-historia-nueva` Página para crear una nueva historia.
+        *  ss
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class MedhisHistoriaNueva extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'medhis-historia-nueva';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * ID de la sesión.
+                    */
+                sesionId: String,
+
+                /**
+                    * ID del formato del encuentro.
+                    */
+                formatoId: String,
+                
+                /**
+                    * ID del tratamiento.
+                    */
+                tratamientoId: String,
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+                </style>
+
+                <graphql-query variables="[[_setQueryVariables(sesionId, formatoId)]]" result="{{result}}">
+                    query HistoriaNuevaPage($sesion: ID!, $formato: ID!) {
+                        sesion: cita(id: $sesion) {
+                            id
+                            visitaUrl
+                            paciente { 
+                                id 
+                                foto 
+                                editUrl 
+                                primerNombre 
+                                tipoDocumento 
+                                segundoNombre 
+                                primerApellido 
+                                segundoApellido 
+                                fechaNacimiento 
+                                numeroDocumento
+                            }
+                            servicio { id, nombre, tipoRips }
+                        }
+                        formato(id: $formato) {
+                            id
+                            contenido
+                            diagnostico
+                            valoresPorDefecto
+                        }
+                    }
+                </graphql-query>
+
+                <paciente-info full-width paciente="[[_serializePacient(result.sesion.paciente)]]"></paciente-info>
+                <br>
+                <historia-clinica historia="[[_setHistoria(result.formato, result.sesion)]]" diagnostico="[[result.formato.diagnostico]]"
+                    on-save-historia="saveHistoria">
+                </historia-clinica>
+            `;
+        }
+
+        /**
+            * Use for one-time configuration of your component after local DOM is
+            * initialized.
+            */
+        ready() {
+            super.ready();
+            this.client = this.shadowRoot.querySelector('graphql-query')._getClient();
+        }
+
+        /**
+            * Sets las variables para el query.
+            *
+            * @param {string} sesion Id de la sesión.
+            * @param {string} formato Id del formato.
+            * @return {object}
+            */
+        _setQueryVariables(sesion, formato) {
+            return sesion && formato ? { sesion, formato } : {};
+        }
+
+        /**
+            * Sets the patient data as needed by paciente-info component.
+            *
+            * @param {string} paciente Id del cliente.
+            * @return {object}
+            */
+        _serializePacient(paciente) {
+            return {
+                foto: paciente.foto,
+                edit_link: paciente.editUrl,
+                primer_nombre: paciente.primerNombre,
+                tipo_documento: paciente.tipoDocumento,
+                segundo_nombre: paciente.segundoNombre,
+                primer_apellido: paciente.primerApellido,
+                segundo_apellido: paciente.segundoApellido,
+                fecha_nacimiento: paciente.fechaNacimiento,
+                numero_documento: paciente.numeroDocumento,
+            };
+        }
+
+        /**
+            * Sets la historia.
+            *
+            * @param {object} formato Formato
+            * @param {object} sesion Sesion
+            * @return {object}
+            */
+        _setHistoria(formato, sesion) {
+            const data = { ...JSON.parse(formato.valoresPorDefecto) };
+            return {
+                data,
+                is_editable: true,
+                visitaUrl: sesion.visitaUrl,
+                paciente_id: sesion.paciente.id,
+                tipoRips: sesion.servicio.tipoRips,
+                adjuntosUrl: this.dataset.adjuntosUrl,
+                nombreServicio: sesion.servicio.nombre,
+                contenido: JSON.parse(formato.contenido),
+            };
+        }
+
+        /**
+            * Despacha un evento si hubo un error al momento de ejecutar alguna mutación.
+            * @event notify-toast-error
+            */
+        _dispatchErrorAdministrativo() {
+            this.dispatchEvent(new CustomEvent('notify-toast-error', {
+                bubbles: true,
+                composed: true,
+                detail: {
+                    text: 'Oops! Hubo un error por favor comunicate con un administrador.',
+                },
+            }));
+        }
+
+        /**
+            * Trigger cuando se desea crear un encuentro.
+            */
+        _serializeEncuentro(formato, cita, { terminada, data }) {
+            return {
+                cita,
+                formato,
+                terminada,
+                data: JSON.stringify(data),
+            };
+        }
+
+        /**
+            * Crea el encuentro
+            *
+            * @param {object} encuentro
+            */
+        _crearEncuentro(encuentro) {
+            const crearEncuentroMutation = Apollo.gql`mutation crearEncuentro($encuentro: HistoriaCreateGenericType!) {
+                crearEncuentro(input: $encuentro) {
+                    ok
+                    errors { field, messages }
+                    historia {
+                        id
+                        terminada
+                        detailUrl
+                        visitaUrl
+                    }
+                }
+            }`;
+
+            this.client.mutate({
+                mutation: crearEncuentroMutation,
+                variables: { encuentro },
+            })
+                .then((result) => {
+                    const data = result.data.crearEncuentro;
+                    const encuentro = data.historia;
+                    if (data.ok) {
+                        window.location = encuentro.terminada ? encuentro.visitaUrl : encuentro.detailUrl;
+                    }
+                    console.error(data.errors);
+                })
+                .catch((error) => {
+                    console.error(error);
+                    this._dispatchErrorAdministrativo();
+                });
+        }
+
+        /**
+            * Trigger cuando se desea crear un encuentro.
+            */
+        saveHistoria(e) {
+            e.stopPropagation();
+            const encuentro = this._serializeEncuentro(this.formatoId, this.sesionId, e.target.historia);
+            this._crearEncuentro(encuentro);
+        }
+    }
+
+    window.customElements.define(MedhisHistoriaNueva.is, MedhisHistoriaNueva);
+</script>

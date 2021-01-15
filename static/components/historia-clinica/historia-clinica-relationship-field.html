@@ -1,0 +1,75 @@
+<link rel="import" href="../../bower_components/vaadin-combo-box/theme/material/vaadin-combo-box.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../components/ig-iron-ajax.html">
+
+<script>
+    class HistoriaClinicaRelationshipField extends Polymer.Element {
+        static get is() { return 'historia-clinica-relationship-field'; }
+
+        static get properties() {
+            return {
+                field: Object,
+                name: String,
+
+                selectedItem: {
+                    type: Object,
+                    notify: true,
+                },
+
+                /** Valor seleccionado */
+                value: {
+                    type: String,
+                    notify: true,
+                    value: '',
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    vaadin-combo-box {
+                        width: 100%;
+                    }
+                </style>
+
+                <ig-iron-ajax url="[[field.url]]=[[filter]]" last-response="{{response}}" loading="{{loading}}" 
+                    handle-as="json" debounce-duration="500" auto on-response="a">
+                </ig-iron-ajax>
+
+                <vaadin-combo-box id="select" filtered-items="[[response]]" filter="{{filter}}" loading="[[loading]]"
+                    auto-validate label="[[field.nombre]]" value="{{value}}" required="[[field.required]]"
+                    selected-item="{{selectedItem}}">
+                </vaadin-combo-box>
+            `;
+        }
+
+        /**
+            * Use for one-time configuration of your component after local DOM is
+            * initialized.
+            */
+        ready() {
+            super.ready();
+            this.first_time = true;
+        }
+
+        a() {
+            if (this.value && this.first_time) {
+                const copy = this.value;
+                this.$.select.value = '';
+                this.$.select.value = copy;
+                this.first_time = false;
+            }
+        }
+
+        validate() {
+            return this.$.select.validate();
+        }
+    }
+
+    window.customElements.define(HistoriaClinicaRelationshipField.is, HistoriaClinicaRelationshipField);
+</script>

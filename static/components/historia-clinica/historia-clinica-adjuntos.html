@@ -1,0 +1,152 @@
+<link rel="import" href="../../bower_components/vaadin-upload/theme/material/vaadin-upload.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../components/ig-iron-ajax.html">
+<link rel="import" href="historia-clinica-file.html">
+
+<script>
+    class HistoriaClinicaAdjuntos extends Polymer.Element {
+        static get is() { return 'historia-clinica-adjuntos'; }
+
+        static get properties() {
+            return {
+                url: String,
+                visitaUrl: String,
+                isEditable: {
+                    type: Boolean,
+                    observer: 'getMaxFiles',
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+
+                    #fileList {
+                        position: relative;
+                    }
+                </style>
+
+                <div class="content">
+                    <ig-iron-ajax id="ajax" url="[[url]]" handle-as="json" on-response="handleResponse" auto></ig-iron-ajax>
+
+                    <vaadin-upload id="upload" files="{{files}}" target="[[url]]" on-file-show="showFile" 
+                                    on-upload-success="handleSuccess" form-data-name="archivo" accept=".pdf,image/*"
+                                    on-file-abort="handleAbort">
+                        <div slot="file-list">
+                            <div id="fileList">
+                                <template is="dom-repeat" items="[[files]]" as="file">
+                                    <historia-clinica-file file="[[file]]" is-editable="[[isEditable]]"></historia-clinica-file>
+                                </template>
+                            </div>
+                        </div>
+                    </vaadin-upload>
+                </div>
+
+                <paper-dialog id="dialog" with-backdrop style="width: 75%; height: 90%;">
+                    <div style="width: 90%; height: 90%;">  
+                        <object width="100%" height="100%" data="/static/a.pdf"></object>
+                    </div>
+                </paper-dialog>
+            `;
+        }
+
+        ready() {
+            super.ready();
+            Polymer.RenderStatus.afterNextRender(this, () => {
+                this.$.upload.headers = { 'X-CSRFToken': getCsrfToken() };
+            });
+        }
+
+        handleResponse(e) {
+            const { response } = e.detail;
+            const files = [];
+            if (response) {
+                response.forEach((element) => {
+                    files.push({
+                        name: element.nombre,
+                        url: element.archivo,
+                        complete: true,
+                        progress: 100,
+                        url_delete: element.url_delete,
+                    });
+                }, this);
+            }
+
+            this.$.upload.files = files;
+        }
+
+        handleSuccess(e) {
+            const { file } = e.detail;
+            const response = JSON.parse(e.detail.xhr.response);
+
+            if (window.location.pathname !== response.encounter_url) {
+                window.location = response.encounter_url;
+            }
+
+            file.url = response.archivo;
+            file.url_delete = response.url_delete;
+
+            this.dispatchEvent(new CustomEvent('notify-toast-success', {
+                bubbles: true,
+                composed: true,
+                detail: {
+                    text: 'El archivo se ha guardado con éxito',
+                },
+            }));
+        }
+
+        showFile(e) {
+            this.$.dialog.querySelector('object').data = e.detail.file.url;
+            document.body.appendChild(this.$.dialog);
+            this.$.dialog.open();
+        }
+
+        handleAbort(e) {
+            this.$.ajax.auto = false;
+            this.$.ajax.url = e.detail.file.url_delete;
+            this.$.ajax.method = 'DELETE';
+            this.$.ajax.addEventListener('response', (e) => {
+                if (e.detail.__data.status !== 204) {
+                    this.dispatchEvent(new CustomEvent('notify-toast-error', {
+                        bubbles: true,
+                        composed: true,
+                        detail: {
+                            text: 'El archivo no pudo ser elíminado, por favor, recargue la página e intentelo de nuevo'
+                        },
+                    }));
+                }
+            });
+            this.$.ajax.generateRequest();
+        }
+
+        getMaxFiles(_new, old) {
+            if (!_new) {
+                this.$.upload.maxFiles = this.$.upload.files.length;
+            }
+        }
+
+        validate() {
+            let valid = true;
+            const fields = this.shadowRoot.querySelectorAll('historia-clinica-field, historia-clinica-table-field');
+            for (let i = 0; i < fields.length; i++) {
+                if (!fields[i].validate()) {
+                    valid = false;
+                }
+            }
+
+            this.invalid = !valid;
+            this.dispatchEvent(new CustomEvent('validate-historia'));
+            return valid;
+        }
+    }
+
+    window.customElements.define(HistoriaClinicaAdjuntos.is, HistoriaClinicaAdjuntos);
+</script>

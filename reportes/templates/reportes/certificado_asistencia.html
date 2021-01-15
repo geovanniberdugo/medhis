@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Certificado de asistencia{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+<style>
+    table {
+        border-collapse: collapse;
+    }
+
+    table, th, td {
+        border: 1px solid grey;
+    }
+
+    th {
+        background-color: #d3d3d396 !important;
+    }
+
+    #patient {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    #signature {
+        text-align: right;
+        padding-block-start: 20px;
+    }
+
+    #signature p {
+        margin: 0px;
+        padding-right: 20%;
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="print-card">
+    {% include "_header_reportes.html" %}
+    <h1 class="center">Certificado de asistencia</h1>
+
+    <h2>Datos Generales</h2>
+    <section id="patient">
+        <div>
+            <strong>Nombre:</strong> {{ paciente }} <br>
+            <strong>Identificación:</strong> {{paciente.tipo_documento}} {{ paciente.numero_documento }} <br>
+            <strong>Estado Civil:</strong> {{ paciente.get_estado_civil_display }} <br>
+            <strong>Fecha de Nacimiento:</strong> {{ paciente.fecha_nacimiento|date:"d-m-Y" }} <br>
+        </div>
+        <div>
+            <strong>Dirección:</strong> {{ paciente.direccion }} <br>
+            <strong>Teléfono:</strong> {% firstof paciente.telefono paciente.celular '' %} <br>
+            <strong>Edad:</strong> {{ paciente.edad }} <br>
+            <strong>Sexo:</strong> {{ paciente.get_genero_display }} <br>
+        </div>
+    </section>
+    <p>
+        <strong>Entidad:</strong> {{ entidad|title }} <br>
+        <strong>Num sesiones realizadas:</strong> {{ citas|length }} <br>
+        <strong>Fecha de impresión:</strong> {% now "d/m/Y" %} <br>
+    </p>
+    <h2>Sesiones realizadas</h2>
+    <section id="data">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha de atención</th>
+                    <th>Hora de atención</th>
+                    <th>Profesional</th>
+                    <th>Servicio</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cita in citas %}
+                <tr>
+                    <td class="center">{{ cita.inicio|date:"d/m/Y" }}</td>
+                    <td class="center">{{ cita.inicio|date:"h:i A" }}</td>
+                    <td>{{ cita.medico|title }}</td>
+                    <td>{{ cita.servicio|title }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="center">No tiene citas atendidas</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    <section id="signature">
+        {% if empleado.firma %}
+        <img src="{{ empleado.firma.url }}" alt="Logo institucion" width="200" height="40" style="padding-right: 20%;">
+        <p><strong>{{ empleado }}</strong></p>
+        <p>{% firstof empleado.especialidad_historia|title '' %}</p>
+        {% endif %}
+    </section>
+</div>
+<paper-fab id="print-button" class="hidden-print" icon="my-icons:print"></paper-fab>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-certificado-asistencia.js' %}"></script>
+{% endblock js %}

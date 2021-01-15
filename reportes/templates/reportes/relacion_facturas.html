@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Relacion facturas{% endblock title %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Relación de facturas" %}</h1>
+</header>
+
+<mh-relacion-facturas></mh-relacion-facturas>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-relacion-facturas.js' %}"></script>
+{% endblock js %}

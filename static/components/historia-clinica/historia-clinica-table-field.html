@@ -1,0 +1,130 @@
+<link rel="import" href="../../bower_components/vaadin-grid/theme/material/vaadin-grid.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/iron-form/iron-form.html">
+<link rel="import" href="historia-clinica-field.html">
+<link rel="import" href="../../my-icons.html">
+
+<script>
+    class HistoriaClinicaTableField extends Polymer.Element {
+        static get is() { return 'historia-clinica-table-field'; }
+
+        static get properties() {
+            return {
+                field: Object,
+
+                /**
+                    * Datos del la historia.
+                    */
+                data: {
+                    type: Array,
+                    value() { return []; },
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    h3 {
+                        border-bottom: 1px solid #eee;
+                        padding-bottom: 9px;
+                    }
+
+                    vaadin-grid {
+                        height: 200px;
+                    }
+
+                    .invalid {
+                        --vaadin-grid-header-cell: {
+                            color: var(--error-color);
+                            height: 64px;
+                            font-size: 12px;
+                            text-transform: uppercase;
+                        };
+                    }
+                </style>
+
+                <h3>[[field.nombre]]</h3>
+
+                <iron-form id="form">
+                    <form>
+                        <template is="dom-repeat" items="{{field.fields}}" as="field">
+                            <historia-clinica-field field=[[field]]></historia-clinica-field>
+                        </template>
+                    </form>
+                </iron-form>
+                
+                <paper-button on-tap="_add">Agregar</paper-button>
+
+                <br><br>
+                <vaadin-grid id="grid" items="{{data}}">
+                    <template is="dom-repeat" items="{{field.fields}}" as="field">
+                        <vaadin-grid-column>
+                            <template class="header">
+                                <div>[[field.nombre]]</div>
+                            </template>
+                            <template>
+                                <div>[[get(field.nombre, item)]]</div>
+                            </template>
+                        </vaadin-grid-column>
+                    </template>
+                    <vaadin-grid-column>
+                        <template>
+                            <paper-icon-button icon="my-icons:delete" alt="Eliminar" on-tap="_delete"></paper-icon-button>
+                        </template>
+                    </vaadin-grid-column>
+                </vaadin-grid>
+            `;
+        }
+
+        _add() {
+            if (this.$.form.validate()) {
+                const item = this.$.form.serializeForm();
+                if (!this._isEmpty(item)) {
+                    this.data.unshift(item);
+                    this.$.grid.clearCache();
+                    this.$.form.reset();
+                }
+            }
+        }
+
+        _delete(e) {
+            const index = this.data.indexOf(e.model.item);
+            this.data.splice(index, 1);
+            this.$.grid.clearCache();
+        }
+
+        _isEmpty(item) {
+            let empty = true;
+            for (let key of Object.keys(item)) {
+                if (item[key] != '' && item[key] != undefined) {
+                    empty = false;
+                    break;
+                }
+            }
+
+            return empty;
+        }
+
+        validate() {
+            if (this.field.required) {
+                if (this.$.grid.items.length == 0) {
+                    this.$.grid.classList.add('invalid');
+                    return false;
+                }
+            }
+
+            this.$.grid.classList.remove('invalid');
+            return true;
+        }
+    }
+
+    window.customElements.define(HistoriaClinicaTableField.is, HistoriaClinicaTableField);
+</script>

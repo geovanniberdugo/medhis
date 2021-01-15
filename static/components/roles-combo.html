@@ -1,0 +1,89 @@
+<link rel="import" href="../bower_components/vaadin-combo-box/theme/material/vaadin-combo-box.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<script>
+    /**
+        * `roles-combo` Combobox de roles
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class RolesCombo extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'roles-combo';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Indica si el combo es requerido
+                    */
+                required: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                /**
+                    * Indica si el combo se muestra
+                    */
+                hidden: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                /**
+                    * Valor
+                    */
+                value: {
+                    type: String,
+                    notify: true,
+                },
+
+                /**
+                    * Item seleccionado
+                    */
+                selectedItem: {
+                    type: Object,
+                    notify: true,
+                },
+            };
+        }
+    
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+
+                    vaadin-combo-box {
+                        width: 100%;
+                    }
+                </style>
+
+                <graphql-query result="{{result}}">
+                    query roles {
+                        roles {
+                            results { id, name }
+                        }
+                    }
+                </graphql-query>
+
+                <vaadin-combo-box label="Rol" required="[[required]]" hidden="[[hidden]]"
+                    item-label-path="name" item-value-path="id" items="[[result.roles.results]]"
+                    value="{{value}}" selected-item="{{selectedItem}}">
+                </vaadin-combo-box>
+            `;
+        }
+    }
+
+    window.customElements.define(RolesCombo.is, RolesCombo);
+</script>

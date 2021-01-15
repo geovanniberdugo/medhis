@@ -1,0 +1,180 @@
+<link rel="import" href="../../bower_components/vaadin-combo-box/theme/material/vaadin-combo-box.html">
+<link rel="import" href="../../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../../bower_components/polymer/lib/utils/debounce.html">
+<link rel="import" href="../../bower_components/polymer/lib/utils/async.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../components/cie-combo.html">
+
+<script>
+    /**
+     * `diagnostico-consulta` Formulario para ingresar un diagnostico(RIPS) de consulta.
+     *
+     * @customElement
+     * @polymer
+     * @extends {Polymer.Element}
+     */
+    class DiagnosticoConsulta extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'diagnostico-consulta';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Lista de tipos de diagnostico
+                    */
+                tipoDiagnostico: {
+                    type: Array,
+                    value: () => ([
+                        { value: 1, label: 'Impresión diagnostica' },
+                        { value: 2, label: 'Confirmado nuevo' },
+                        { value: 3, label: 'Confirmado repetido' },
+                    ]),
+                },
+
+                /**
+                    * Lista de finalidad
+                    */
+                finalidad: {
+                    type: Array,
+                    value: () => ([
+                        { value: '01', label: 'Atención del parto' },
+                        { value: '02', label: 'Atención del recién nacido' },
+                        { value: '03', label: 'Atención en planificación familiar' },
+                        { value: '04', label: 'Detección de alteraciones de crecimiento y desarrollo del menor de diez años' },
+                        { value: '05', label: 'Detección de alteración del desarrollo joven' },
+                        { value: '06', label: 'Detección de alteraciones del embarazo' },
+                        { value: '07', label: 'Detección de alteraciones del adulto' },
+                        { value: '08', label: 'Detección de alteraciones de agudeza visual' },
+                        { value: '09', label: 'Detección de enfermedad profesional' },
+                        { value: '10', label: 'No aplica' },
+                    ]),
+                },
+
+                /**
+                    * Lista de causa externa
+                    */
+                causaExterna: {
+                    type: Array,
+                    value: () => ([
+                        { value: '01', label: 'Accidente de trabajo' },
+                        { value: '02', label: 'Accidente de tránsito' },
+                        { value: '03', label: 'Accidente rábico' },
+                        { value: '04', label: 'Accidente ofídico' },
+                        { value: '05', label: 'Otro tipo de accidente' },
+                        { value: '06', label: 'Evento catastrófico' },
+                        { value: '07', label: 'Lesión por agresión' },
+                        { value: '08', label: 'Lesión auto infligida' },
+                        { value: '09', label: 'Sospecha de maltrato físico' },
+                        { value: '10', label: 'Sospecha de abuso sexual' },
+                        { value: '11', label: 'Sospecha de violencia sexual' },
+                        { value: '12', label: 'Sospecha de maltrato emocional' },
+                        { value: '13', label: 'Enfermedad general' },
+                        { value: '14', label: 'Enfermedad profesional' },
+                        { value: '15', label: 'Otra' },
+                    ]),
+                },
+
+                /**
+                    * Datos del diagnotico
+                    */
+                data: {
+                    type: Object,
+                    notify: true,
+                    value: () => ({}),
+                },
+
+                /**
+                    * Parametros predefinidos
+                    */
+                _params: {
+                    type: Object,
+                    value: () => ({}),
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    vaadin-combo-box {
+                        display: block;
+                    }
+                </style>
+
+                <graphql-query defer on-result-changed="_parametrosData">
+                    query parametrosRipsConsulta {
+                        parametrosRips(tipo: "CO") {
+                            results { id, data }
+                        }
+                    }
+                </graphql-query>
+
+                <vaadin-combo-box label="Finalidad de la consulta" items="[[finalidad]]" required
+                    value="{{data.finalidad}}" selected-item="{{data.finalidadItem}}"
+                    hidden$="[[_hideInput('finalidad', _params)]]">
+                </vaadin-combo-box>
+                <vaadin-combo-box label="Causa externa" items="[[causaExterna]]" required
+                    value="{{data.causaExterna}}" selected-item="{{data.causaExternaItem}}"
+                    hidden$="[[_hideInput('causaExterna', _params)]]">
+                </vaadin-combo-box>
+                <vaadin-combo-box label="Tipo diagnóstico principal" items="[[tipoDiagnostico]]" required
+                    value="{{data.tipoDiagnostico}}" selected-item="{{data.tipoDiagnosticoItem}}"
+                    hidden$="[[_hideInput('tipoDiagnostico', _params)]]">
+                </vaadin-combo-box>
+                <cie-combo label="Diagnóstico principal" required value="{{data.diagnosticoPrincipal}}" 
+                    selected-item="{{data.diagnosticoPrincipalItem}}" hidden$="[[_hideInput('diagnosticoPrincipalItem', _params)]]">
+                </cie-combo>
+                <cie-combo label="Diagnóstico relacionado 1" value="{{data.diagnostico1}}" 
+                    selected-item="{{data.diagnostico1Item}}" hidden$="[[_hideInput('diagnostico1Item', _params)]]">
+                </cie-combo>
+                <cie-combo label="Diagnóstico relacionado 2" value="{{data.diagnostico2}}" 
+                    selected-item="{{data.diagnostico2Item}}" hidden$="[[_hideInput('diagnostico2Item', _params)]]">
+                </cie-combo>
+                <cie-combo label="Diagnóstico relacionado 3" value="{{data.diagnostico3}}" 
+                    selected-item="{{data.diagnostico3Item}}" hidden$="[[_hideInput('diagnostico3Item', _params)]]">
+                </cie-combo>
+            `;
+        }
+
+        /**
+         * Resultados query.
+         */
+        _parametrosData(e) {
+            const result = e.detail.value.parametrosRips.results;
+            const parametros = result.length > 0 ? result[0] : {};
+            this._params = JSON.parse(parametros.data);
+            for (let param in this._params) {
+                this.set(`data.${param}`, this.data[param] || this._params[param]);
+            }
+        }
+
+        /**
+         * Indica si se muestra el input.
+         */
+        _hideInput(name, params) {
+            return name in params;
+        }
+
+        /**
+            * Valida el formulario
+        */
+        validate() {
+            const fields = this.shadowRoot.querySelectorAll('vaadin-combo-box, cie-combo');
+            const validaciones = [...fields].map(e => e.validate());
+            return validaciones.every(e => e === true);
+        }
+    }
+
+    window.customElements.define(DiagnosticoConsulta.is, DiagnosticoConsulta);
+</script>

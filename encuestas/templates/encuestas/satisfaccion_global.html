@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block imports %}
+<link rel="import" href="{% static 'pages/medhis-satisfaccion-global.html' %}">
+{% endblock imports %}
+
+{% block content %}
+    <header class="header-title">
+        <h1>{% trans "Encuesta de Satisfacción Global" %}</h1>
+    </header>
+
+    <medhis-satisfaccion-global></medhis-satisfaccion-global>
+{% endblock content %}

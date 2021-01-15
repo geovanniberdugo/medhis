@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n static l10n %}
+
+{% block title %}Pagos{% endblock title %}
+
+{% block content %}
+<mh-pagos-paciente paciente="{{ paciente.id|unlocalize }}"></mh-pagos-paciente>
+{% endblock content %}
+
+{% block dialogs %}
+<nuevo-pago pacienteid="{{ paciente.id|unlocalize }}"></nuevo-pago>
+{% endblock dialogs %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-pagos-paciente.js' %}"></script>
+{% endblock js %}

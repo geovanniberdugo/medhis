@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Facturacion Siigo{% endblock title %}
+
+{% block content %}
+<header class="header-title">
+    <h1>{% trans "Facturacion siigo" %}</h1>
+</header>
+
+<mh-facturacion-siigo url="{% url 'facturacion:siigo' %}">
+    {% csrf_token %}
+</mh-facturacion-siigo>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-facturacion-siigo.js' %}"></script>
+{% endblock js %}

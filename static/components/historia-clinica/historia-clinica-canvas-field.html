@@ -1,0 +1,193 @@
+<link rel="import" href="../../bower_components/paper-buttons-group/paper-buttons-group.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../my-icons.html">
+
+<script src="../../bower_components/fabric.js/dist/fabric.js"></script>
+<script>
+    /**
+     * `historia-clinica-canvas-field` Campo de los formatos para realizar dibujos sobre imagenes.
+     *
+     * @summary ShortDescription.
+     * @customElement
+     * @polymer
+     * @extends {Polymer.Element}
+     */
+    class HistoriaClinicaCanvasField extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'historia-clinica-canvas-field';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+
+                /**
+                    * Nombre de llave dentro de data.
+                    */
+                key: String,
+
+                /**
+                    * Acción a ejecutar. 0: Agregar circulo. 1: Borrar circulo.
+                    */
+                accion: {
+                    type: Number,
+                    value: 0,
+                },
+
+                /**
+                    * Formato del campo.
+                    */
+                field: {
+                    type: Object,
+                    value: () => ({}),
+                },
+
+                /**
+                    * Datos del campo.
+                    */
+                data: {
+                    type: Object,
+                    value: () => ({}),
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    div {
+                        display: flex;
+                        align-items: center;
+                    }
+
+                    canvas {
+                        border: 1px solid;
+                    }
+
+                    paper-buttons-group {
+                        display: flex;
+                        flex-direction: column;
+                    }
+                </style>
+
+                <h3>[[field.nombre]]</h3>
+
+                <div>
+                    <canvas id="canvas"></canvas>
+                    <paper-buttons-group selected="{{accion}}">
+                        <paper-button><iron-icon icon="my-icons:edit"></iron-icon></paper-button>
+                        <paper-button><iron-icon icon="my-icons:delete"></iron-icon></paper-button>
+                    </paper-buttons-group>
+                </div>
+                <span>[[field.helpText]]</span>
+            `;
+        }
+
+        /**
+            * Use for one-time configuration of your component after local DOM is
+            * initialized.
+            */
+        ready() {
+            super.ready();
+            this._init();
+        }
+
+        /**
+            * Inicializa el canvas
+            */
+        _init() {
+            Polymer.flush();
+            this._canvas = new fabric.Canvas(this.$.canvas, {
+                width: 350,
+                height: 470,
+            });
+
+            this._setBackgroundImage(this.field.image);
+            this._drawDataOnCanvas(this.data[this.key]);
+            this._canvas.on('mouse:up', (options) => { this._clickOnCanvas(options); });
+        }
+
+        /**
+            * Setea la imagen de fondo en el canvas.
+            * @param {string} image Ruta de la imagen.
+            */
+        _setBackgroundImage(image) {
+            this._canvas.setBackgroundImage(image, this._canvas.renderAll.bind(this._canvas), {
+                width: this._canvas.width,
+                height: this._canvas.height,
+            });
+        }
+
+        /**
+            * Dibuja los datos en el canvas.
+            * @param {array} data Array con los datos a pintar en el canvas;.
+            */
+        _drawDataOnCanvas(data) {
+            this._canvas.loadFromJSON(Object.assign({}, this._canvas.toObject(), { objects: data }));
+        }
+
+        /**
+            * Reconoce cuando se hace click en el canvas.
+            */
+        _clickOnCanvas(options) {
+            if (!options.target && this.accion === 0) {
+                this._drawCircle(options.pointer.y, options.pointer.x);
+            } else if (options.target && this.accion === 1) {
+                this._deleteCircle(options.target);
+            }
+        }
+
+        /**
+            * Dibuja un circulo en el canvas.
+            * @param {number} top Distancia del borde superior del canvas.
+            * @param {number} left Distancia del borde izquierdo del canvas.
+            */
+        _drawCircle(top, left) {
+            const circle = new fabric.Circle({
+                radius: 10,
+                fill: 'blue',
+                top: top - 10,
+                left: left - 10,
+            });
+
+            this._canvas.add(circle);
+            this._saveCanvasData();
+        }
+
+        /**
+            * Borra el circulo seleccionado.
+            * @param {object} circle Circulo a borrar.
+            */
+        _deleteCircle(circle) {
+            this._canvas.remove(circle);
+            this._saveCanvasData();
+        }
+
+        /**
+            * Guarda los datos del canvas en data.
+            */
+        _saveCanvasData() {
+            this.data[this.key] = this._canvas.toObject().objects;
+        }
+
+        /**
+            * Valida el campo.
+            */
+        validate() {
+            return true;
+        }
+    }
+
+    window.customElements.define(HistoriaClinicaCanvasField.is, HistoriaClinicaCanvasField);
+</script>

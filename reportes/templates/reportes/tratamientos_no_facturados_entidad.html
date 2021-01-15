@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Tratamientos no facturados por entidad{% endblock title %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Tratamientos no facturados por entidad" %}</h1>
+</header>
+
+<mh-tratamientos-no-facturados-entidad></mh-tratamientos-no-facturados-entidad>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-tratamientos-no-facturados-entidad.js' %}"></script>
+{% endblock js %}

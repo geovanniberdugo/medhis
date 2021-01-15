@@ -1,0 +1,94 @@
+<link rel="import" href="../bower_components/vaadin-combo-box/theme/material/vaadin-combo-box.html">
+<link rel="import" href="../bower_components/paper-money-input-ench/paper-money-input-ench.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-form/iron-form.html">
+
+<script>
+    /**
+     * `recibo-caja-form` Formulario para ingresar un recibo de caja.
+     *
+     * @customElement
+     * @polymer
+     * @extends {Polymer.Element}
+     */
+    class ReciboCajaForm extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'recibo-caja-form';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Datos del recibo
+                    */
+                recibo: {
+                    type: Object,
+                    value: () => ({}),
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    form {
+                        display: grid;
+                        grid-template-columns: 1fr;
+                    }
+
+                    .full {
+                        grid-column: 1 / -1;
+                    }
+
+                    @media (min-width: 40em) {
+                        form {
+                            display: grid;
+                            grid-gap: 5px;
+                            align-items: end;
+                            grid-template-columns: 1fr 1fr;
+                        }
+                    }
+                </style>
+
+                <graphql-query defer result="{{result}}">
+                    query reciboCajaQuery {
+                        formasPago: __type(name: "ReciboCajaFormaPagoEnum") {
+                            enumValues { name, description }
+                        }
+                    }
+                </graphql-query>
+
+                <iron-form id="form">
+                    <form>
+                        <vaadin-combo-box label="Forma de pago" name="formaPago" required item-value-path="name"
+                            items="[[result.formasPago.enumValues]]" item-label-path="description" value="{{recibo.formaPago}}">
+                        </vaadin-combo-box>
+                        <paper-money-input-ench label="Abono *" name="valor" precision="0" required value="{{recibo.valor}}"></paper-money-input-ench>
+                        <paper-textarea label="Detalle" name="detalle" class="full" value="{{recibo.detalle}}"></paper-textarea>
+                    </form>
+                </iron-form>
+            `;
+        }
+
+        /**
+            * Valida el formulario
+            */
+        validate() {
+            return this.$.form.validate();
+        }
+    }
+
+    window.customElements.define(ReciboCajaForm.is, ReciboCajaForm);
+</script>

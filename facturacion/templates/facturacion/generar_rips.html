@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Rips{% endblock title %}
+
+{% block content %}
+<header>
+    <h1>{% trans "RIPS" %}</h1>
+</header>
+
+<mh-rips url="{% url 'facturacion:rips' %}">
+    {% csrf_token %}
+</mh-rips>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-rips.js' %}"></script>
+{% endblock js %}

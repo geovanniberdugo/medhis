@@ -1,0 +1,504 @@
+<link rel="import" href="../bower_components/vaadin-grid/theme/material/vaadin-grid-selection-column.html">
+<link rel="import" href="../bower_components/vaadin-combo-box/theme/material/vaadin-combo-box.html">
+<link rel="import" href="../bower_components/range-datepicker/range-datepicker-input.html">
+<link rel="import" href="../bower_components/vaadin-grid/theme/material/vaadin-grid.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/lib/elements/dom-if.html">
+<link rel="import" href="../bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../my-icons.html">
+
+<script src="../bower_components/moment/moment.js"></script>
+<script>
+    /**
+        * `medhis-facturacion-cliente` Página para facturar clientes.
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class MedhisFacturacionCliente extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'medhis-facturacion-cliente';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Filtros usados para buscar las citas a facturar.
+                    */
+                filtros: {
+                    type: Object,
+                    value: () => ({}),
+                },
+
+                /**
+                    * Obsevaciones que se deseen agregar a la factura.
+                    */
+                observaciones: String,
+
+                /**
+                    * Indica si se debe discriminar IVA.
+                    */
+                mostrarIva: {
+                    type: Boolean,
+                    computed: '_debeMostrarIVA(filtros.clienteItem.discriminarIva)',
+                },
+
+                /**
+                    * Termino de busqueda
+                    */
+                searchTerm: {
+                    type: Object,
+                    value: () => { },
+                },
+
+                /**
+                    * Indica si debe facturar a nombre del paciente
+                    */
+                facturarPaciente: {
+                    type: Boolean,
+                    computed: '_debeFacturarPaciente(filtros.clienteItem.facturaPaciente)',
+                },
+
+                /**
+                    * Citas posibles a facturar.
+                    */
+                citas: {
+                    type: Array,
+                    value: () => ([]),
+                },
+
+                /**
+                    * Citas seleccionadas para facturar.
+                    */
+                citasFacturar: {
+                    type: Array,
+                    value: () => [],
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                        /* --range-datepicker-cell-hover: var(--app-primary-color);
+                        --range-datepicker-cell-selected: var(--app-primary-color);
+                        --range-datepicker-cell-hovered: var(--app-primary-color); */
+                    }
+
+                    paper-card {
+                        width: 100%;
+                    }
+
+                    paper-fab {
+                        position: fixed;
+                        bottom: 10px;
+                        right: 10px;
+                    }
+
+                    #filtros {
+                        display: grid;
+                        grid-gap: 10px;
+                        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+                    }
+
+                    #filtros > paper-icon-button {
+                        align-self: center;
+                    }
+
+                    .total {
+                        font-weight: bolder;
+                        color: black;
+                    }
+                </style>
+
+                <graphql-query result="{{pageResult}}">
+                    query facturacionFiltros {
+                        clientes { 
+                            results { id, nombre, discriminarIva, facturaPaciente } 
+                        } 
+                        instituciones { 
+                            results { id, nombre } 
+                        }
+                    }
+                </graphql-query>
+
+                <graphql-query id="citas-query" on-result-changed="_citasObtenidas">
+                    query citasFacturar($institucion: ID!, $cliente: ID!, $paciente: String) {
+                        citas(disponibleFacturar: true, empresa: $cliente, institucion: $institucion, documentoPaciente: $paciente) {
+                            results {
+                                id
+                                autorizacion
+                                servicio { id, nombre }
+                                servicioPrestado { id, valor, coopago, coopagoBruto, ivaCoopago }
+                                paciente { id, numeroDocumento, nombreCompleto }
+                            }
+                        }
+                    }
+                </graphql-query>
+
+                <graphql-query result="{{pacientesResult}}" variables="[[searchTerm]]" defer>
+                    query pacientes($term: String!) {
+                        pacientes(search: $term) {
+                            results {
+                                id
+                                nombreCompleto
+                                numeroDocumento
+                            }
+                        }
+                    }
+                </graphql-query>
+
+                <paper-card>
+                    <div id="filtros" class="card-content">
+                        <range-datepicker-input date-from="{{filtros.desde}}" date-to="{{filtros.hasta}}">
+                            <template>
+                                <div style="display: grid; grid-gap: 10px; grid-template-columns: 1fr 1fr;">
+                                    <paper-input label="Fecha inicial*" value="[[dateFrom]]" required name="desde"></paper-input>
+                                    <paper-input label="Fecha final*" value="[[dateTo]]" required name="hasta"></paper-input>
+                                </div>
+                            </template>
+                        </range-datepicker-input>
+                        <vaadin-combo-box label="Institución" items="[[pageResult.instituciones.results]]" required
+                            item-label-path="nombre" item-value-path="id" value="{{filtros.institucion}}" 
+                            selected-item="{{filtros.institucionItem}}" name="institucion">
+                        </vaadin-combo-box>
+                        <vaadin-combo-box label="IPS/EPS" items="[[pageResult.clientes.results]]" required
+                            item-label-path="nombre" item-value-path="id" value="{{filtros.cliente}}"
+                            selected-item="{{filtros.clienteItem}}" name="cliente">
+                        </vaadin-combo-box>
+                        <vaadin-combo-box label="Paciente" required="[[facturarPaciente]]" hidden="[[!facturarPaciente]]" value="{{filtros.paciente}}"
+                            item-label-path="nombreCompleto" item-value-path="id" on-filter-changed="_searchPaciente"
+                            selected-item="{{filtros.pacienteItem}}" name="paciente" filtered-items="[[pacientesResult.pacientes.results]]">
+                            <template>[[item.numeroDocumento]] - [[item.nombreCompleto]]</template>
+                        </vaadin-combo-box>
+                        <paper-icon-button icon="my-icons:search" on-tap="_getCitas"></paper-icon-button>
+                    </div>
+                </paper-card>
+                <br><br>
+                <vaadin-grid id="grid" items="[[citas]]" selected-items="{{citasFacturar}}">
+                    <vaadin-grid-selection-column auto-select></vaadin-grid-selection-column>
+                    <vaadin-grid-column flex-grow="2">
+                        <template class="header">Paciente</template>
+                        <template>[[item.paciente.nombre]]<br>[[item.paciente.id]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column flex-grow="2">
+                        <template class="header">Servicio</template>
+                        <template>[[item.servicio]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Autorización</template>
+                        <template>[[item.autorizacion]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column flex-grow="0">
+                        <template class="header">Cantidad</template>
+                        <template>[[_countCitas(item.citas)]]</template>
+                        <template class="footer">
+                            <span class="total">TOTALES</span>
+                        </template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Valor Unitario</template>
+                        <template>[[_formatMoney(item.valor)]]</template>
+                        <template class="footer">
+                            <span class="total">[[_calcTotalKey(citasFacturar.splices, 'valor')]]</span>
+                        </template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column hidden="[[!mostrarIva]]">
+                        <template class="header">Coopago Bruto</template>
+                        <template>[[_formatMoney(item.coopagoBruto)]]</template>
+                        <template class="footer">
+                            <span class="total">[[_calcTotalKey(citasFacturar.splices, 'coopagoBruto')]]</span>
+                        </template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column hidden="[[!mostrarIva]]">
+                        <template class="header">IVA Coopago</template>
+                        <template>[[_formatMoney(item.ivaCoopago)]]</template>
+                        <template class="footer">
+                            <span class="total">[[_calcTotalKey(citasFacturar.splices, 'ivaCoopago')]]</span>
+                        </template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Coopago</template>
+                        <template>[[_formatMoney(item.coopago)]]</template>
+                        <template class="footer">
+                            <span class="total">[[_calcTotalKey(citasFacturar.splices, 'coopago')]]</span>
+                        </template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Subtotal</template>
+                        <template>[[_formatSubtotal(item.citas, item.valor, item.coopago)]]</template>
+                        <template class="footer">
+                            <span class="total">[[_calcularTotal(citasFacturar.splices)]]</span>
+                        </template>
+                    </vaadin-grid-column>
+                </vaadin-grid>
+                <br>
+                <paper-card>
+                    <div class="card-content">
+                        <paper-textarea label="Observaciones" value="{{observaciones}}"></paper-textarea>
+                    </div>
+                </paper-card>
+                <paper-fab icon="my-icons:done" disabled="[[_disableFacturar(citasFacturar.splices)]]" on-tap="generarFactura"></paper-fab>
+            `;
+        }
+
+        /**
+            * Use for one-time configuration of your component after local DOM is
+            * initialized.
+            */
+        ready() {
+            super.ready();
+            this.client = this.shadowRoot.querySelector('graphql-query')._getClient();
+        }
+
+        /**
+            * Buscar pacientes
+            */
+        _searchPaciente(e) {
+            const term = e.detail.value;
+            this._debouncer = Polymer.Debouncer.debounce(
+                this._debouncer,
+                Polymer.Async.timeOut.after(500),
+                () => { this.searchTerm = term ? { term } : {}; },
+            );
+        }
+
+        /**
+            * Indica si se debe discriminar el IVA en la factura.
+            */
+        _debeMostrarIVA(discriminar) {
+            return !!discriminar;
+        }
+
+        /**
+            * Indica si se debe facturar a nombre del paciente
+            */
+        _debeFacturarPaciente(facturar) {
+            return !!facturar;
+        }
+
+        /**
+            * Obtiene las citas posibles a facturar.
+            */
+        _getCitas() {
+            if (this._validate()) {
+                this._setCitasQueryVariables();
+            } else {
+                this.citas = [];
+            }
+        }
+
+        /**
+            * Valida que todos los filtros tengan valor.
+            */
+        _validate() {
+            return [...this.$.filtros.querySelectorAll('[name]')].map(e => e.validate()).every(e => e);
+        }
+
+        /**
+            * Valida que todos los filtros tengan valor.
+            */
+        _setCitasQueryVariables() {
+            const { cliente, institucion, paciente, pacienteItem } = this.filtros;
+            const query = this.$['citas-query'];
+            const conPaciente = paciente ? { paciente: pacienteItem.numeroDocumento } : {};
+            query.variables = {
+                cliente,
+                institucion,
+                ...conPaciente,
+            };
+        }
+
+        /**
+            * Calcula el subtotal para cada cita.
+            */
+        _calcularSubtotal(citas, valor, coopago) {
+            if (citas && valor && coopago) {
+                const cant = this._countCitas(citas);
+                // return (cant * valor) - parseInt(coopago, 10);
+                return (cant * valor) - coopago;
+            }
+
+            return 0;
+        }
+
+        /**
+            * Formatea subtotal
+            */
+        _formatSubtotal(citas, valor, coopago) {
+            return this._formatMoney(this._calcularSubtotal(citas, valor, coopago));
+        }
+
+        /**
+            * Calcula el total en base a la llave.
+            *
+            * @param {object} changeRecord.
+            * @param {string} key LLave en donde se van a sacar los valores a sumar.
+            */
+        _calcTotalKey(changeRecord, key) {
+            const total = changeRecord ? changeRecord.indexSplices[0].object.reduce(
+                (acc, item) => acc + item[key],
+                0,
+            ) : 0;
+            return this._formatMoney(total);
+        }
+
+        /**
+            * Calcula el total de la factura.
+            *
+            * @param {object} changeRecord.
+            */
+        _calcularTotal(changeRecord) {
+            let total = 0;
+
+            if (changeRecord) {
+                total = changeRecord.indexSplices[0].object.reduce(
+                    (acc, item) => acc + this._calcularSubtotal(item.citas, item.valor, item.coopago),
+                    0,
+                );
+            }
+
+            return this._formatMoney(total);
+        }
+
+        /**
+            * Formatea dinero.
+            */
+        _formatMoney(value) {
+            return value.toLocaleString();
+        }
+
+        /**
+            * Cuenta la cantidad de citas.
+            */
+        _countCitas(citas) {
+            return citas.length;
+        }
+
+        /**
+            * Citas obtenidas.
+            */
+        _citasObtenidas(e) {
+            const citas = e.detail.value.citas.results;
+            const citasDict = citas.reduce((acc, cita) => {
+                const key = `${cita.autorizacion}-${cita.servicio.id}`;
+                if (!(key in acc)) {
+                    acc[key] = {
+                        citas: [cita.id],
+                        servicio: cita.servicio.nombre,
+                        autorizacion: cita.autorizacion,
+                        valor: cita.servicioPrestado.valor,
+                        coopago: cita.servicioPrestado.coopago,
+                        ivaCoopago: cita.servicioPrestado.ivaCoopago,
+                        coopagoBruto: cita.servicioPrestado.coopagoBruto,
+                        paciente: { id: cita.paciente.numeroDocumento, nombre: cita.paciente.nombreCompleto },
+                    };
+                } else {
+                    acc[key].citas.push(cita.id);
+                    acc[key].coopago += cita.servicioPrestado.coopago;
+                    acc[key].ivaCoopago += cita.servicioPrestado.ivaCoopago;
+                    acc[key].coopagoBruto += cita.servicioPrestado.coopagoBruto;
+                }
+
+                return acc;
+            }, {});
+
+            this.citas = Object.values(citasDict);
+        }
+
+        /**
+            * Indica si se debe deshabilitar el boton para facturar.
+            */
+        _disableFacturar(changeRecord) {
+            return changeRecord ? changeRecord.indexSplices[0].object.length === 0 : true;
+        }
+
+        /**
+            * Formatea el detalle de la factura.
+        */
+        _buildDetalleFactura(cita) {
+            return {
+                valor: cita.valor,
+                citas: cita.citas,
+                cantidad: cita.citas.length,
+                ivaCoopago: cita.ivaCoopago,
+                coopagoBruto: cita.coopagoBruto,
+                coopago: parseInt(cita.coopago, 10),
+            };
+        }
+
+        /**
+            * Formatea las citas a facturar como es requerida para generar la factura.
+            *
+            * @param {object} datosFactura
+            * @param {array} citasFacturar
+            * @param {boolean} conIva indica si se discrimina el iva en la factura
+            */
+        _buildNuevaFactura(datosFactura, citasFacturar, conIva, observaciones) {
+            const { cliente, institucion, paciente } = datosFactura;
+            const conPaciente = paciente ? { paciente } : {};
+            return {
+                cliente,
+                institucion,
+                observaciones,
+                ...conPaciente,
+                fechaFin: moment.unix(datosFactura.hasta).format('YYYY-MM-DD'),
+                fechaInicio: moment.unix(datosFactura.desde).format('YYYY-MM-DD'),
+                detalle: citasFacturar.map(cita => this._buildDetalleFactura(cita, conIva)),
+            };
+        }
+
+        /**
+            * Mutation para generar la factura.
+            *
+            * @param {object} nuevaFactura
+            */
+        _generarFacturaMutation(nuevaFactura) {
+            const generarFacturaMutation = Apollo.gql`mutation generarFactura($nuevaFactura: FacturaInput!) {
+                generarFactura(input: $nuevaFactura) {
+                    ok
+                    errors { field, messages }
+                    factura { id, numero, detalleUrl }
+                }
+            }`;
+
+            this.client.mutate({
+                mutation: generarFacturaMutation,
+                variables: { nuevaFactura },
+            })
+                .then((result) => {
+                    if (result.data.generarFactura.ok) {
+                        window.location = result.data.generarFactura.factura.detalleUrl;
+                    } else {
+                        console.error(result.data.generarFactura.errors);
+                    }
+                })
+                .catch(error => console.error(error));
+        }
+
+        /**
+            * Genera la factura.
+            */
+        generarFactura() {
+            const conIva = this.filtros.clienteItem.discriminarIva;
+            const nuevaFactura = this._buildNuevaFactura(this.filtros, this.citasFacturar, conIva, this.observaciones);
+            this._generarFacturaMutation(nuevaFactura);
+        }
+    }
+
+    window.customElements.define(MedhisFacturacionCliente.is, MedhisFacturacionCliente);
+</script>

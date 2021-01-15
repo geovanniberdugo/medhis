@@ -1,0 +1,229 @@
+<link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/iron-form/iron-form.html">
+<link rel="import" href="../components/medicos-combo.html">
+
+<script src="../js/utils.js"></script>
+<script>
+    const fieldNames = {
+        f: 'fin',
+        i: 'inicio',
+        d: 'conDescanso',
+        fd: 'finDescanso',
+        id: 'inicioDescanso',
+    };
+
+    const groupByDia = (obj, horario) => {
+        const [key, value] = horario;
+        const [name, dia] = key.split('_');
+        if ((name === 'fd' || name === 'id') && !value) return obj;
+
+        if (!obj[dia]) {
+            obj[dia] = { dia, [fieldNames[name]]: value };
+        } else {
+            obj[dia] = { ...obj[dia], [fieldNames[name]]: value };
+        }
+
+        return obj;
+    };
+
+    /**
+        * `medhis-horario-atencion` Página para agregar horario de atención de un medico.
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class MedhisHorarioAtencion extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'medhis-horario-atencion';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Description for prop
+                    */
+                dias: {
+                    type: Array,
+                    value: () => [
+                        { nombre: 'Lunes', value: '1' },
+                        { nombre: 'Martes', value: '2' },
+                        { nombre: 'Miercoles', value: '3' },
+                        { nombre: 'Jueves', value: '4' },
+                        { nombre: 'Viernes', value: '5' },
+                        { nombre: 'Sabado', value: '6' },
+                        { nombre: 'Domingo', value: '7' },
+                    ],
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+
+                    paper-card {
+                        width: 100%;
+                        margin-bottom: 10px;
+                    }
+
+                    @media(min-width: 40em) {
+                        .dates {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-around;
+                        }
+                    }
+                </style>
+
+                <graphql-query variables="[[_queryVariables(medicoId)]]" result="{{data}}">
+                    query horarioAtencionMedico($medico: ID!) {
+                        medico: empleado(id: $medico) {
+                            id
+                            horariosAtencion {
+                                id
+                                dia
+                                fin
+                                inicio
+                                conDescanso
+                                finDescanso
+                                inicioDescanso
+                            }
+                        }
+                    }
+                </graphql-query>
+
+                <iron-form>
+                    <form>
+                        <paper-card>
+                            <div class="card-content">
+                                <medicos-combo name="medico" required value="{{medicoId}}"></medicos-combo>
+                            </div>
+                        </paper-card>
+                        <br>
+                        <template is="dom-repeat" items="[[dias]]" as="dia">
+                            <paper-card>
+                                <div class="card-content dates">
+                                    <h2>[[dia.nombre]]</h2>
+                                    <div>
+                                        <paper-input name="i_[[dia.value]]" label="Inicio" type="time" value="[[_getValor(dia.value, 'inicio', data.medico.horariosAtencion)]]"></paper-input>
+                                        <paper-input name="f_[[dia.value]]" label="Fin" type="time" value="[[_getValor(dia.value, 'fin', data.medico.horariosAtencion)]]"></paper-input>
+                                    </div>
+                                    <div><paper-toggle-button name="d_[[dia.value]]" checked="[[_getValor(dia.value, 'conDescanso', data.medico.horariosAtencion)]]">¿Descanso?</paper-toggle-button></div>
+                                    <div>
+                                        <paper-input name="id_[[dia.value]]" label="Inicio descanso" type="time" value="[[_getValor(dia.value, 'inicioDescanso', data.medico.horariosAtencion)]]"></paper-input>
+                                        <paper-input name="fd_[[dia.value]]" label="Fin descanso" type="time" value="[[_getValor(dia.value, 'finDescanso', data.medico.horariosAtencion)]]"></paper-input>
+                                    </div>
+                                </div>
+                            </paper-card>
+                        </template>
+                    </form>
+                </iron-form>
+                <paper-button on-click="save">Guardar</paper-button>
+            `;
+        }
+
+        /**
+            * Variables para el query
+            */
+        _queryVariables(medico) {
+            return medico ? { medico } : {};
+        }
+
+        /**
+            * Obtiene el valor del campo para el dia
+            */
+        _getValor(dia, campo, horarios = []) {
+            const horario = horarios.filter(v => v.dia === dia);
+            if (horario.length > 0) {
+                return horario[0][campo];
+            }
+
+            if (campo === 'conDescanso') return false;
+            return '';
+        }
+
+        /**
+            * Mutacion
+            */
+        _horarioMutation(medico) {
+            const guardarHorarioMutation = Apollo.gql`
+            mutation guardarHorarioAtencion($medico: MedicoInput!) {
+                guardarHorarioAtencion(input: $medico) {
+                    ok
+                    errors { field, messages }
+                    empleado {
+                        id
+                        horariosAtencion {
+                            id
+                            dia
+                            fin
+                            inicio
+                            conDescanso
+                            finDescanso
+                            inicioDescanso
+                        }
+                    }
+                }
+            }`;
+
+            Apollo.client.mutate({
+                mutation: guardarHorarioMutation,
+                variables: { medico },
+                // refetchQueries: [queryToRefetch],
+            })
+                .then((result) => {
+                    const data = result.data.guardarHorarioAtencion;
+                    if (data.ok) {
+                        notifySuccessMessage(this, 'Horario guardado satisfactoriamente');
+                    }
+                })
+                .catch(error => console.error(error));
+        }
+
+        /**
+            * Valida los horarios.
+            */
+        valid(horarios) {
+            // Validate a least one
+            return true;
+        }
+
+        /**
+            * Guarda los horarios.
+            */
+        save() {
+            const form = this.shadowRoot.querySelector('iron-form');
+            const medico = this.shadowRoot.querySelector('medicos-combo').value;
+            const { prefix, suffix, ...formData } = form.serializeForm();
+            const data = Object.entries(formData).reduce(groupByDia, {});
+            const horarios = Object.values(data).filter(v => !!v.inicio && !!v.fin);
+
+            if (form.validate() && this.valid(horarios)) {
+                this._horarioMutation({
+                    horarios,
+                    id: medico,
+                });
+            } else {
+                notifyErrorMessage(this, 'Hubo un error por favor verifica');
+            }
+        }
+    }
+
+    window.customElements.define(MedhisHorarioAtencion.is, MedhisHorarioAtencion);
+</script>

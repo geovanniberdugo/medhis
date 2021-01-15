@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+<style>
+    table {
+        border-collapse: collapse;
+    }
+
+    table, th, td {
+        border: 1px solid grey;
+    }
+
+    th {
+        background-color: #d3d3d396 !important;
+    }
+
+    tfoot td {
+        font-weight: bold;
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="print-card">
+    {% include "_header_reportes.html" %}
+    <h1 class="center">Indicadores de mortalidad, morbilidad y eventos adversos</h1>
+    <p>
+        <b>Período:</b> {{ desde }} - {{ hasta }}
+    </p>
+
+    <table>
+        <tbody>
+            <tr>
+                <td rowspan="3">% Mortalidad</td>
+                <td>No. de pacientes fallecidos</td>
+                <td class="center">0</td>
+            </tr>
+            <tr>
+                <td>Total de pacientes atendidos</td>
+                <td class="center">{{ data.total }}</td>
+            </tr>
+            <tr>
+                <td><b>Porcentaje</b></td>
+                <td class="center">0%</td>
+            </tr>
+            {% for valor in data.valores %}
+            <tr>
+                <td rowspan="3">% Morbilidad de {{ valor.nombre }}</td>
+                <td>No. de pacientes en {{ valor.nombre }}</td>
+                <td class="center">{{ valor.cantidad }}</td>
+            </tr>
+            <tr>
+                <td>Total de pacientes atendidos</td>
+                <td class="center">{{ data.total }}</td>
+            </tr>
+            <tr>
+                <td><b>Porcentaje</b></td>
+                <td class="center">{{ valor.porcentaje }}%</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td rowspan="3">% Eventos adversos</td>
+                <td>Detectados y gestionados por</td>
+                <td class="center">0</td>
+            </tr>
+            <tr>
+                <td>Detectados por paciente</td>
+                <td class="center">0</td>
+            </tr>
+            <tr>
+                <td><b>Porcentaje</b></td>
+                <td class="center">0%</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<paper-fab id="print-button" class="hidden-print" icon="my-icons:print"></paper-fab>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-print-ind-mortalidad-morbilidad.js' %}"></script>
+{% endblock js %}

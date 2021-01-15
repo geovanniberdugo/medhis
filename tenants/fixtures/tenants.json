@@ -1,0 +1,1 @@
+[{"model": "tenants.tenant", "pk": 1, "fields": {"domain_url": "localhost", "schema_name": "public", "nombre": "public", "creado_el": "2017-08-25T02:21:05.137Z"}}, {"model": "tenants.tenant", "pk": 2, "fields": {"domain_url": "t1.localhost", "schema_name": "t1", "nombre": "tenant 1", "creado_el": "2017-08-25T02:21:44.684Z"}}]

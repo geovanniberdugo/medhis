@@ -1,0 +1,25 @@
+{% if style.input_type == 'date' %}
+  <vaadin-date-picker style="width: 100%;" label="{{ field.label }}" auto-validate 
+                      {% if field.value %} value="{{ field.value }}" {% endif %} placeholder="MM/DD/YYYY"
+                      {% if field.errors %} error-message="{{ field.errors|join:',' }}" invalid {% endif %}
+                      {% if field.required %} required {% endif %} name="{{ field.name }}" {{ style.attrs }}>
+  </vaadin-date-picker>
+{% elif style.input_type == 'file' %}
+  <br>
+  <p>{{ field.name|upper }}</p>
+  <vaadin-upload form-data-name="{{ field.name }}" {{ style.attrs }}></vaadin-upload>
+  {% if field.value %}
+    <script>
+      document.querySelector('vaadin-upload[form-data-name="{{ field.name }}"]').files = [
+        {name: '{{ field.value }}', progress: 100, completed: true}
+      ]
+    </script>
+  {% endif %}
+{% else %}
+  <paper-input label="{{ field.label }}{% if field.required %}*{% endif %}" auto-validate type="{{ style.input_type }}"
+             {% if field.value %} value="{{ field.value }}" {% endif %}
+             {% if field.errors %} error-message="{{ field.errors|join:',' }}" invalid {% endif %}
+             {% if style.input_type == 'text' %} char-counter maxlength="{{ field.max_length }}" {% endif %}
+             {% if field.required %} required {% endif %} name="{{ field.name }}" {{ style.attrs }}>
+  </paper-input>
+{% endif %}

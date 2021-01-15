@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Relacion citas paciente{% endblock title %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Relación de citas por paciente" %}</h1>
+    <small>Tratamientos del paciente que tuvieron citas en el rango de fechas escogido</small>
+</header>
+
+<mh-relacion-citas-paciente></mh-relacion-citas-paciente>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-relacion-citas-paciente.js' %}"></script>
+{% endblock js %}

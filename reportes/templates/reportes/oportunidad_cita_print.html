@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+<style>
+    table {
+        border-collapse: collapse;
+    }
+
+    table, th, td {
+        border: 1px solid grey;
+    }
+
+    th {
+        background-color: #d3d3d396 !important;
+    }
+
+    tfoot td {
+        font-weight: bold;
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="print-card">
+    {% include "_header_reportes.html" %}
+    <h1 class="center">Oportunidad de citas</h1>
+    <p>
+        <b>Período:</b> {{ desde }} - {{ hasta }}
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Entidad</th>
+                <th>Dias</th>
+                <th>Citas</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entidad in data.entidades %}
+            <tr>
+                <td>{{ entidad.nombre|title }}</td>
+                <td class="center">{{ entidad.dias }}</td>
+                <td class="center">{{ entidad.cantidad }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td>TOTAL</td>
+                <td class="center">{{ data.total_dias }}</td>
+                <td class="center">{{ data.total_citas }}</td>
+            </tr>
+            <tr>
+                <td>INDICADOR</td>
+                <td colspan="2" class="center">{{ data.indicador }}</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+<paper-fab id="print-button" class="hidden-print" icon="my-icons:print"></paper-fab>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-print-oportunidad-cita.js' %}"></script>
+{% endblock js %}

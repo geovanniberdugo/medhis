@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load i18n l10n static %}
+
+{% block title %}Historias{% endblock %}
+
+{% block content %}
+    <mh-historias-paciente pacienteid="{{ paciente.id|unlocalize }}"></mh-historias-paciente>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-historias-paciente.js' %}"></script>
+{% endblock js %}

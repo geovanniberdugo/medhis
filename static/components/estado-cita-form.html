@@ -1,0 +1,153 @@
+<link rel="import" href="../bower_components/vaadin-radio-button/theme/material/vaadin-radio-button.html">
+<link rel="import" href="../bower_components/vaadin-radio-button/theme/material/vaadin-radio-group.html">
+<link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="../bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<script>
+    /**
+        * `estado-cita-form` Formulario para cambiar el estado de la cita.
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class EstadoCitaForm extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'estado-cita-form';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Estados que puede tener la cita
+                    */
+                estados: {
+                    type: Array,
+                    value: () => ([]),
+                },
+
+                /**
+                    * Estado a actualizar la cita
+                    */
+                nuevoEstado: {
+                    type: String,
+                    notify: true,
+                    value: '',
+                    observer: '_nuevoEstadoChanged',
+                },
+
+                /**
+                    * Motivo de cancelación
+                    */
+                motivo: {
+                    type: String,
+                    notify: true,
+                    value: '',
+                },
+
+                /**
+                    * Indica si debe ingresar motivo de cancelación
+                    */
+                conMotivo: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                /**
+                    * Indica si el combo es requerido
+                    */
+                required: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                couldReagendar: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                reagendar: {
+                    type: Boolean,
+                    value: false,
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+
+                    *[hidden] {
+                        display: none;
+                    } 
+                </style>
+
+                <vaadin-radio-group required="[[required]]" value="{{nuevoEstado}}" error-message="Escoge un estado">
+                    <template is="dom-repeat" items="[[estados]]" as="estado">
+                        <vaadin-radio-button value="[[estado.value]]">[[estado.label]]</vaadin-radio-button>
+                    </template>
+                </vaadin-radio-group>
+                <paper-textarea label="Motivo" name="motivo" hidden$=[[!conMotivo]] id="motivo"
+                    required="[[conMotivo]]" auto-validate value="{{motivo}}" error-message="Debes ingresar un motivo">
+                </paper-textarea>
+                <br>
+                <paper-toggle-button hidden$="[[!couldReagendar]]" checked="{{reagendar}}">Reagendar cita automaticamente</paper-toggle-button>
+            `;
+        }
+
+        /**
+            * Observer para el nuevo estado de la cita
+            */
+        _nuevoEstadoChanged(newValue) {
+            this.couldReagendar = ['EX', 'NT', 'NA'].includes(newValue);
+            this.conMotivo = ['CA', 'EX', 'NA', 'NT'].includes(newValue);
+
+            if (!this.conMotivo) this.motivo = '';
+            if (this.conMotivo) this.$.motivo.focus();
+            if (!this.couldReagendar) this.reagendar = false;
+        }
+
+        /**
+            * Valida el formulario
+            */
+        validate() {
+            const group = this.shadowRoot.querySelector('vaadin-radio-group');
+            const text = this.shadowRoot.querySelector('paper-textarea');
+            return group.validate() && text.validate();
+        }
+
+        /**
+            * Resetea el estado de la cita.
+            */
+        reset() {
+            this.motivo = '';
+            this.nuevoEstado = '';
+            this.reagendar = false;
+        }
+
+        /**
+            * Devuelve el valor del formulario
+            * @return {{estado: String, motivo: String}}
+            */
+        value() {
+            return {
+                motivo: this.motivo,
+                estado: this.nuevoEstado,
+                reagendar: this.reagendar,
+            };
+        }
+    }
+
+    window.customElements.define(EstadoCitaForm.is, EstadoCitaForm);
+</script>

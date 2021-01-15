@@ -1,0 +1,135 @@
+<link rel="import" href="../bower_components/vaadin-grid/theme/material/vaadin-grid-sorter.html">
+<link rel="import" href="../bower_components/vaadin-grid/theme/material/vaadin-grid.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../components/institucion-form.html">
+
+<script>
+    /**
+        * `medhis-instituciones` Página para listar las instituciones del cliente.
+        *
+        * @summary ShortDescription.
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class MedhisInstituciones extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'medhis-instituciones';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    paper-fab {
+                        position: absolute;
+                        right: 30px;
+                        bottom: calc(100vh - 530px);
+                    }
+                </style>
+
+                <graphql-query result="{{result}}">
+                    query todasInstituciones { 
+                        instituciones { 
+                            results { 
+                                id 
+                                codigo 
+                                telefono 
+                                direccion 
+                                razonSocial 
+                                identificacion
+                                nombre @title_case 
+                                tipoDocumentoDisplay 
+                                ciudad { id, nombre } 
+                            } 
+                        } 
+                    }
+                </graphql-query>
+
+                <vaadin-grid id="table" items="[[result.instituciones.results]]" on-active-item-changed="edit">
+                    <vaadin-grid-column flex-grow="2">
+                        <template class="header">
+                            <vaadin-grid-sorter path="nombre" direction="asc">Nombre</vaadin-grid-sorter>
+                        </template>
+                        <template>[[item.nombre]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Razón Social</template>
+                        <template>[[item.razonSocial]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Tipo de Documento</template>
+                        <template>[[item.tipoDocumentoDisplay]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Identificación</template>
+                        <template>[[item.identificacion]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Código</template>
+                        <template>[[item.codigo]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Dirección</template>
+                        <template>[[item.direccion]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Teléfono</template>
+                        <template>[[item.telefono]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Ciudad</template>
+                        <template>[[item.ciudad.nombre]]</template>
+                    </vaadin-grid-column>
+                </vaadin-grid>
+
+                <paper-fab icon="my-icons:add" elevation="3" on-tap="create"></paper-fab>
+            `;
+        }
+
+        /** Retorna el formulario. */
+        static _getForm() {
+            return Medhis.institucionFormInstance;
+        }
+
+        /**
+            * Muestra formulario para crear una institucion.
+            */
+        create() {
+            const form = MedhisInstituciones._getForm();
+            form.id = null;
+            form.opened = true;
+        }
+
+        /**
+            * Muestra el formulario para editar la institucion.
+            */
+        edit(e) {
+            if (e.detail.value) {
+                const form = MedhisInstituciones._getForm();
+                form.id = e.detail.value.id;
+                this.$.table.activeItem = null;
+                form.opened = true;
+            }
+        }
+    }
+
+    window.customElements.define(MedhisInstituciones.is, MedhisInstituciones);
+</script>

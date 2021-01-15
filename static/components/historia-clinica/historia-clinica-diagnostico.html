@@ -1,0 +1,107 @@
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-if.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="diagnostico-procedimiento.html">
+<link rel="import" href="diagnostico-consulta.html">
+
+<script>
+    /**
+        * `historia-clinica-diagnostico` Diagnostico
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class HistoriaClinicaDiagnostico extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'historia-clinica-diagnostico';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /** Indica el tipo RIPS a ingresar */
+                clase: {
+                    type: String,
+                    value: 'consulta',
+                },
+
+                /** Indica si el tab es invalido. */
+                invalid: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                /** Datos de los rips. */
+                data: {
+                    type: Object,
+                    notify: true,
+                    value() { return {}; },
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+                </style>
+
+                <template is="dom-if" if="[[_isConsulta(clase)]]">
+                    <diagnostico-consulta id="rips" data="{{data}}"></diagnostico-consulta>
+                </template>
+
+                <template is="dom-if" if="[[_isProcedimiento(clase)]]">
+                    <diagnostico-procedimiento id="rips" data="{{data}}"></diagnostico-procedimiento>
+                </template>
+            `;
+        }
+
+        /**
+            * Indica si es una consulta.
+        */
+        _isConsulta(tipo) {
+            return tipo === 'consulta';
+        }
+
+        /**
+            * Indica si es un procedimiento.
+        */
+        _isProcedimiento(tipo) {
+            return tipo === 'procedimiento';
+        }
+
+        /**
+            * Valida los datos del rip.
+        */
+        validate() {
+            const valid = this.shadowRoot.querySelector('#rips').validate();
+            this.invalid = !valid;
+            this.dispatchEvent(new CustomEvent('validate-historia'));
+            return valid;
+        }
+
+        /**
+            * Guarda la historia.
+        */
+        save() {
+            if (this.validate()) {
+                this.dispatchEvent(new CustomEvent('save-historia', {
+                    detail: { terminada: false }, bubbles: true, composed: true,
+                }));
+            } else {
+                this.dispatchEvent(new CustomEvent('notify-toast-form-error', {
+                    bubbles: true, composed: true, detail: {},
+                }));
+            }
+        }
+    }
+
+    window.customElements.define(HistoriaClinicaDiagnostico.is, HistoriaClinicaDiagnostico);
+</script>

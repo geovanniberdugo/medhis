@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Tarifas{% endblock %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Tarifas" %}</h1>
+</header>
+
+<mh-tarifas></mh-tarifas>
+{% endblock content %}
+
+{% block dialogs %}
+<tarifa-form></tarifa-form>
+{% endblock dialogs %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-tarifas.js' %}"></script>
+{% endblock js %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Tratamientos para pagos de terapeutas{% endblock title %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Tratamientos para pagos de terapeutas" %}</h1>
+</header>
+
+<mh-tratamientos-pago-terapeutas></mh-tratamientos-pago-terapeutas>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-tratamientos-pago-terapeutas.js' %}"></script>
+{% endblock js %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Relacion recibos de caja{% endblock title %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Relación de recibos de caja" %}</h1>
+</header>
+
+<mh-relacion-recibos-caja></mh-relacion-recibos-caja>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-relacion-recibos-caja.js' %}"></script>
+{% endblock js %}

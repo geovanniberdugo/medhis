@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block imports %}
+<link rel="import" href="{% static 'pages/medhis-sucursales.html' %}">
+{% endblock imports %}
+
+{% block content %}
+    <header class="header-title">
+        <h1>{% trans "Sucursales" %}</h1>
+    </header>
+
+    <medhis-sucursales></medhis-sucursales>
+{% endblock content %}
+
+{% block dialogs %}
+<sucursal-form></sucursal-form>
+{% endblock dialogs %}

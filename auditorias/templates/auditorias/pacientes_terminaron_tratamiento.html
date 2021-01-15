@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block content %}
+<header>
+    <h1>{% trans "auditoria pacientes terminaron tratamiento" %}</h1>
+</header>
+
+<mh-pacientes-terminaron-tratamiento {% if perms.pacientes.can_recibir_pacientes_terminaron_tratamiento %}can-recibir{% endif %}
+    {% if perms.pacientes.can_verificar_pacientes_terminaron_tratamiento %}can-verificar{% endif %}>
+</mh-pacientes-terminaron-tratamiento>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-pacientes-terminaron-tratamiento.js' %}"></script>
+{% endblock js %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Contabilización de recibos de caja{% endblock title %}
+
+{% block content %}
+<header class="header-title">
+    <h1>{% trans "Contabilizar recibos caja" %}</h1>
+</header>
+
+<mh-contabilizacion-recibos-caja url="{% url 'facturacion:contabilidad-recibos-caja' %}">
+    {% csrf_token %}
+</mh-contabilizacion-recibos-caja>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-contabilizacion-recibos-caja.js' %}"></script>
+{% endblock js %}

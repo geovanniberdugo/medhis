@@ -1,0 +1,129 @@
+<link rel="import" href="../bower_components/vaadin-grid/theme/material/vaadin-grid.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../components/cliente-form.html">
+
+<script>
+    /**
+        * `medhis-clientes` Página para listar los clientes.
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class MedhisClientes extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'medhis-clientes';
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    * {
+                        box-sizing: border-box;
+                    }
+
+                    paper-fab {
+                        position: absolute;
+                        right: 30px;
+                        bottom: calc(100vh - 530px);
+                    }
+                </style>
+
+                <graphql-query result="{{result}}">
+                    query todosClientes {
+                        clientes { 
+                            results { 
+                                id 
+                                nit
+                                telefono
+                                planesURL
+                                direccion
+                                tipoDisplay
+                                nombre @title_case
+                                razonSocial @title_case
+                            } 
+                        }
+                    }
+                </graphql-query>
+
+                <vaadin-grid id="table" items="[[result.clientes.results]]" on-active-item-changed="edit">
+                    <vaadin-grid-column>
+                        <template class="header">Nit</template>
+                        <template>
+                            <a href="[[item.planesURL]]">[[item.nit]]</a>
+                        </template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Nombre</template>
+                        <template>
+                            [[item.nombre]]
+                        </template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Razón Social</template>
+                        <template>
+                            [[item.razonSocial]]
+                        </template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Dirección</template>
+                        <template>
+                            [[item.direccion]]
+                        </template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Teléfono</template>
+                        <template>
+                            [[item.telefono]]
+                        </template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Tipo</template>
+                        <template>
+                            [[item.tipoDisplay]]
+                        </template>
+                    </vaadin-grid-column>
+                </vaadin-grid>
+
+                <paper-fab icon="my-icons:add" elevation="3" on-tap="create"></paper-fab>
+            `;
+        }
+
+        /** Retorna el formulario. */
+        static _getForm() {
+            return Medhis.clienteFormInstance;
+        }
+
+        /**
+            * Muestra formulario para crear un cliente.
+            */
+        create() {
+            const form = MedhisClientes._getForm();
+            form.id = null;
+            form.opened = true;
+        }
+
+        /**
+            * Muestra el formulario para editar el cliente.
+            */
+        edit(e) {
+            if (e.detail.value) {
+                const form = MedhisClientes._getForm();
+                form.id = e.detail.value.id;
+                this.$.table.activeItem = null;
+                form.opened = true;
+            }
+        }
+    }
+
+    window.customElements.define(MedhisClientes.is, MedhisClientes);
+</script>

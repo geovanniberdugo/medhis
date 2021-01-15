@@ -1,0 +1,202 @@
+{
+    "impresionDiagnostica": {
+        "fields": {
+            "order": [
+                "causaExterna",
+                "tipoDiagnostico",
+                "finalidad",
+                "origenEnfermedad",
+                "diagnostico",
+                "diagnostico1",
+                "diagnostico2",
+                "diagnostico3"
+            ],
+            "finalidad": {
+                "tipo": "select",
+                "nombre": "Finalidad",
+                "options": [
+                    {
+                        "label": "Atenci\u00f3n del parto",
+                        "value": 1
+                    },
+                    {
+                        "label": "Atenci\u00f3n del recien nacido",
+                        "value": 2
+                    },
+                    {
+                        "label": "Atenci\u00f3n en planificaci\u00f3n familiar",
+                        "value": 3
+                    },
+                    {
+                        "label": "Detecci\u00f3n de alteraciones de crecimientoy desarrollo del menor de diez a\u00f1os",
+                        "value": 4
+                    },
+                    {
+                        "label": "Detecci\u00f3n de alteraci\u00f3n del desarrollo del joven",
+                        "value": 5
+                    },
+                    {
+                        "label": "Detecci\u00f3n de alteraciones del embarazo",
+                        "value": 6
+                    },
+                    {
+                        "label": "Detecci\u00f3n de alteraciones del adulto",
+                        "value": 7
+                    },
+                    {
+                        "label": "Detecci\u00f3n de alteraciones de agudeza visual",
+                        "value": 8
+                    },
+                    {
+                        "label": "Detecci\u00f3n de enfermedad profesional",
+                        "value": 9
+                    },
+                    {
+                        "label": "No aplica",
+                        "value": 10
+                    }
+                ]
+            },
+            "diagnostico": {
+                "url": "/globales/cies/?search",
+                "tipo": "relacion",
+                "nombre": "Diagnostico",
+                "required": true
+            },
+            "causaExterna": {
+                "tipo": "select",
+                "nombre": "Causa externa",
+                "options": [
+                    {
+                        "label": "Enfermedad general",
+                        "value": 1
+                    },
+                    {
+                        "label": "Enfermedad profesional",
+                        "value": 2
+                    },
+                    {
+                        "label": "Accidente de trabajo",
+                        "value": 3
+                    },
+                    {
+                        "label": "Accidente de tr\u00e1nsito",
+                        "value": 4
+                    },
+                    {
+                        "label": "Accidente r\u00e1bico",
+                        "value": 5
+                    },
+                    {
+                        "label": "Accidente of\u00eddico",
+                        "value": 6
+                    },
+                    {
+                        "label": "Otro tipo de accidente",
+                        "value": 7
+                    },
+                    {
+                        "label": "Evento catastr\u00f3fico",
+                        "value": 8
+                    },
+                    {
+                        "label": "Lesi\u00f3n por agresi\u00f3n",
+                        "value": 9
+                    },
+                    {
+                        "label": "Lesi\u00f3n auto inflingida",
+                        "value": 10
+                    },
+                    {
+                        "label": "Sospecha de maltrato f\u00edsico",
+                        "value": 11
+                    },
+                    {
+                        "label": "Sospecha de abuso sexual",
+                        "value": 12
+                    },
+                    {
+                        "label": "Sospecha de maltrato emocional",
+                        "value": 13
+                    },
+                    {
+                        "label": "Otra",
+                        "value": 14
+                    }
+                ]
+            },
+            "diagnostico1": {
+                "url": "/globales/cies/?search",
+                "tipo": "relacion",
+                "nombre": "Diagnostico 1"
+            },
+            "diagnostico2": {
+                "url": "/globales/cies/?search",
+                "tipo": "relacion",
+                "nombre": "Diagnostico 2"
+            },
+            "diagnostico3": {
+                "url": "/globales/cies/?search",
+                "tipo": "relacion",
+                "nombre": "Diagnostico 3"
+            },
+            "tipoDiagnostico": {
+                "tipo": "select",
+                "nombre": "Tipo diagnostico",
+                "options": [
+                    {
+                        "label": "Impresi\u00f3n diagn\u00f3stica",
+                        "value": 1
+                    },
+                    {
+                        "label": "Confirmado nuevo",
+                        "value": 2
+                    },
+                    {
+                        "label": "Confirmado repetido",
+                        "value": 3
+                    }
+                ]
+            },
+            "origenEnfermedad": {
+                "tipo": "select",
+                "nombre": "Origen enfermedad",
+                "options": [
+                    {
+                        "label": "Adquirido",
+                        "value": 1
+                    },
+                    {
+                        "label": "Traumatico",
+                        "value": 1
+                    },
+                    {
+                        "label": "Alergico",
+                        "value": 1
+                    },
+                    {
+                        "label": "Estetico",
+                        "value": 1
+                    },
+                    {
+                        "label": "Profesional o Laboral",
+                        "value": 1
+                    },
+                    {
+                        "label": "Accidente Laboral",
+                        "value": 1
+                    },
+                    {
+                        "label": "Paciente Sano",
+                        "value": 1
+                    },
+                    {
+                        "label": "Otros",
+                        "value": 1
+                    }
+                ]
+            }
+        },
+        "nombre": "Impresi\u00f3n Diagnostica"
+    }
+}

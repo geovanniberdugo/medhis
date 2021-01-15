@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Cajas{% endblock %}
+
+{% block content %}
+<header>
+    <h1>{% trans "cajas" %}</h1>
+</header>
+
+<mh-cajas
+    {% if perms.facturacion.can_recibir_caja %}canrecibir{% endif %}
+    {% if perms.facturacion.can_cerrar_caja %}cancerrarcaja{% endif %}
+    {% if perms.facturacion.can_see_transacciones_caja %}canvertransacciones{% endif %}>
+</mh-cajas>
+{% endblock content %}
+
+{% block dialogs %}
+<cierre-caja-form></cierre-caja-form>
+<transacciones-caja></transacciones-caja>
+{% endblock dialogs %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-cajas.js' %}"></script>
+{% endblock js %}

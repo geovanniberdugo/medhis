@@ -1,0 +1,104 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/iron-image/iron-image.html">
+
+<script>
+    /**
+        * `paciente-info` Muestra los datos basicos del paciente.
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class PacienteInfo extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'paciente-info';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Datos del paciente.
+                    */
+                paciente: {
+                    type: Object,
+                    value: () => ({}),
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        line-height: 1;
+                        text-align: center;
+                        display: inline-block;
+                    }
+
+                    :host([mini]) {
+                        --paper-card: {
+                            width: 100%;
+                        };
+                    }
+
+                    :host([mini]) figure {
+                        display: flex;
+                        text-align: left;
+                        align-items: center;
+                    }
+
+                    :host([mini]) figure iron-image {
+                        width: 50px;
+                        height: 50px;
+                        margin-right: 10px;
+                    }
+
+                    :host([mini]) h4 {
+                        margin-top: 0;
+                    }
+
+                    figure {
+                        margin: inherit;
+                    }
+
+                    h4 {
+                        margin-bottom: 0;
+                    }
+
+                    p {
+                        margin: 0;
+                    }
+
+                    iron-image {
+                        width: 150px;
+                        height: 150px;
+                    }
+                </style>
+
+                <paper-card>
+                    <div class="card-content">
+                        <figure>
+                            <iron-image src="[[paciente.foto]]" sizing="cover" preload fade placeholder="/static/img/profile-none.png"></iron-image>
+                            <figcaption>
+                                <h4>[[paciente.nombreCompleto]]</h4>
+                                <p>
+                                    <small>[[paciente.tipoDocumento]] [[paciente.numeroDocumento]]</small> <br>
+                                    <small>[[paciente.edad]]</small>
+                                </p>
+                            </figcaption>
+                        </figure>                
+                    </div>
+                </paper-card>
+            `;
+        }
+    }
+
+    window.customElements.define(PacienteInfo.is, PacienteInfo);
+</script>

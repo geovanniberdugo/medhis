@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n static l10n %}
+
+{% block title %}Detalle orden{% endblock %}
+
+{% block content %}
+<mh-detalle-orden orden-id="{{ orden.id|unlocalize }}"></mh-detalle-orden>
+{% endblock content %}
+
+{% block dialogs %}
+<editar-tratamiento></editar-tratamiento>
+<nuevo-servicio-orden orden-id="{{ orden.id|unlocalize }}"></nuevo-servicio-orden>
+{% endblock dialogs %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-detalle-orden.js' %}"></script>
+{% endblock js %}

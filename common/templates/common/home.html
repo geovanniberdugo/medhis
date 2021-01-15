@@ -1,0 +1,86 @@
+{% extends "base.html" %} 
+{% load i18n static %}
+
+{% block css %}
+<style>
+    .card {
+        box-shadow: initial;
+        border-radius: initial;
+        border: 1px solid var(--material-divider-color);
+        border-bottom: initial;
+    }
+
+    .card > div {
+        text-align: center;
+        text-transform: uppercase;
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+    <header>
+        <h1>{% trans "Dashboard" %}</h1>
+    </header>
+    
+    <mh-dashboard>
+        {% if perms.pacientes.can_add_paciente %}
+        <a class="app-menu-item" href="{% url 'pacientes:crear' %}">
+            <div class="card">
+                <iron-icon icon="my-icons:person-add"></iron-icon>
+                {% trans "Crear paciente" %}
+            </div>
+        </a>
+        {% endif %}
+        {% if perms.historias.add_historia or perms.agenda.puede_ver_agenda %}
+        <a class="app-menu-item" href="{% url 'agenda:listar' %}">
+            <div class="card">
+                <iron-icon icon="my-icons:assignment"></iron-icon>
+                {% trans "Agenda diaria" %}
+            </div>
+        </a>
+        {% endif %}
+        {% if perms.agenda.can_agendar_citas %}
+        <a class="app-menu-item" href="{% url 'agenda:citas' %}?tipo=m">
+            <div class="card">
+                <iron-icon icon="my-icons:camera-enhance"></iron-icon>
+                {% trans "Agenda Por Médico" %}
+            </div>
+        </a>
+        {% for agenda in agendas %}
+        <a class="app-menu-item" href="{{ agenda.get_absolute_url }}">
+            <div class="card">
+                {{ agenda.nombre }}
+            </div>
+        </a>
+        {% endfor %}
+        {% endif %}
+        {% if perms.agenda.can_generar_indicadores_resolucion_256 %}
+        <a class="app-menu-item" href="{% url 'agenda:indicadores-resolucion-256' %}">
+            <div class="card">
+                <iron-icon icon="my-icons:timeline"></iron-icon>
+                {% trans "Resolución 256" %}
+            </div>
+        </a>
+        {% endif %}
+        {% if perms.facturacion.can_facturar %}
+        <a class="app-menu-item" href="{% url 'facturacion:facturar-cliente' %}">
+            <div class="card">
+                <iron-icon icon="my-icons:local-atm"></iron-icon>
+                {% trans "Facturar" %}
+            </div>
+        </a>
+        {% endif %}
+        {% if perms.facturacion.puede_generar_rips %}
+        <a class="app-menu-item" href="{% url 'facturacion:rips' %}">
+            <div class="card">
+                <iron-icon icon="my-icons:description"></iron-icon>
+                {% trans "Generar RIPS" %}
+            </div>
+        </a>
+        {% endif %}
+    </mh-dashboard>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-dashboard.js' %}"></script>
+{% endblock js %}

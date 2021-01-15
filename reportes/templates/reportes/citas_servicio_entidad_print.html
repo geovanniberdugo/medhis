@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+<style>
+    table {
+        border-collapse: collapse;
+    }
+
+    table, th, td {
+        border: 1px solid grey;
+    }
+
+    th {
+        background-color: #d3d3d396 !important;
+    }
+
+    tfoot td {
+        font-weight: bold;
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="print-card">
+    {% include "_header_reportes.html" %}
+    <h1 class="center">Total de citas por servicio y entidad</h1>
+    <p>
+        <b>Período:</b> {{ desde }} - {{ hasta }}
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Entidad</th>
+                {% for servicio in data.servicios %}
+                <th>{{ servicio|title }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for valor in data.valores %}
+            <tr>
+                <td>{{ valor.nombre|title }}</td>
+                {% for cantidad in valor.servicios %}
+                <td class="center">{{ cantidad }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td>TOTAL</td>
+                {% for total in data.totales %}
+                <td class="center">{{ total }}</td>
+                {% endfor %}
+            </tr>
+        </tfoot>
+    </table>
+</div>
+<paper-fab id="print-button" class="hidden-print" icon="my-icons:print"></paper-fab>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-print-citas-servicio-entidad.js' %}"></script>
+{% endblock js %}

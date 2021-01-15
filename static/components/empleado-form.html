@@ -1,0 +1,188 @@
+<link rel="import" href="../bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/iron-form/iron-form.html">
+<link rel="import" href="../components/cru-form-mixin.html">
+<link rel="import" href="../components/roles-combo.html">
+
+<script>
+    /**
+    * @namespace Medhis.
+    */
+    window.Medhis = window.Medhis || {};
+    window.Medhis.empleadoFormInstance = null;
+
+    /**
+        * `empleado-form` Formulario para crear y editar empleados administrativos
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class EmpleadoForm extends Medhis.CRUFormMixin(Polymer.Element) {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'empleado-form';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+
+                    paper-dialog {
+                        width: 60%;
+                    }
+                </style>
+
+                <graphql-query id="datos-objeto-query" hold>
+                    query datosEmpleado($id: ID!) {
+                        empleado(id: $id) {
+                            id
+                            activo
+                            cedula
+                            nombres
+                            apellidos
+                            usuario { id, username, rol { id } }
+                        }
+                    }
+                </graphql-query>
+
+                <paper-dialog modal opened="{{opened}}">
+                    <h2>Usuario Administrativo</h2>
+                    <paper-dialog-scrollable>
+                        <iron-form id="form">
+                            <form>
+                                <paper-input label="Nombres *" name="nombres" required value="{{value.nombres}}"></paper-input>
+                                <paper-input label="Apellidos *" name="apellidos" required value="{{value.apellidos}}"></paper-input>
+                                <paper-input label="Cedula *" name="cedula" required value="{{value.cedula}}"></paper-input>
+                                <paper-toggle-button checked="{{value.activo}}">Activo</paper-toggle-button>
+                                <paper-input label="Usuario *" name="usuario" required value="{{value.username}}"></paper-input>
+                                <roles-combo name="rol" required value="{{value.rol}}"></roles-combo>
+                                <paper-input label="Contraseña" name="password1" type="password" value="{{value.password1}}"></paper-input>
+                                <paper-input label="Confirmar contraseña" name="password2" type="password" value="{{value.password2}}"></paper-input>
+                            </form>
+                        </iron-form>
+                    </paper-dialog-scrollable>
+                    <div class="buttons">
+                        <paper-button dialog-dismiss>Cancelar</paper-button>
+                        <paper-button on-tap="save">[[accion]]</paper-button>
+                    </div>
+                </paper-dialog>
+            `;
+        }
+
+        /**
+            * Instance of the element is created/upgraded. Useful for initializing
+            * state, set up event listeners, create shadow dom.
+            * @constructor
+            */
+        constructor() {
+            super();
+            if (!window.Medhis.empleadoFormInstance) window.Medhis.empleadoFormInstance = this;
+            this.createdResultName = 'crearEmpleadoAdministrativo';
+            this.editedResultName = 'editarEmpleadoAdministrativo';
+            this.objectResultName = 'empleado';
+        }
+
+        /**
+            * LLena el formulario con los datos obtenidos.
+            */
+        _fillFormulario(data) {
+            const { nombres, apellidos, activo, cedula, usuario: { username, rol } } = data;
+            this.value = {
+                activo,
+                cedula,
+                nombres,
+                username,
+                apellidos,
+                rol: rol && rol.id,
+            };
+        }
+
+        /**
+            * Quita los password si estan vacios.
+            */
+        _cleanPassword(data) {
+            const { password1, password2, ...rest } = data;
+            if (password1) rest.password1 = password1;
+            if (password2) rest.password2 = password2;
+            return rest;
+        }
+
+        /**
+            * @override
+            */
+        _createOptions(value) {
+            const createMutation = Apollo.gql`
+                mutation crearEmpleadoAdministrativo($empleado: CrearEmpleadoAdministrativoInput!) {
+                    crearEmpleadoAdministrativo(input: $empleado) {
+                        ok
+                        errors { field, messages }
+                    }
+                }
+            `;
+
+            return {
+                mutation: createMutation,
+                variables: {
+                    empleado: { ...this._cleanPassword(value) },
+                },
+                refetchQueries: ['usuariosAdministrativos'],
+            };
+        }
+
+        /**
+            * @override
+            */
+        _editOptions(id, value) {
+            const editMutation = Apollo.gql`
+                mutation editarEmpledoAdministrativo($empleado: EditarEmpleadoAdministrativoInput!) {
+                    editarEmpleadoAdministrativo(input: $empleado) {
+                        ok
+                        errors { field, messages }
+                        empleado {
+                            id
+                            activo
+                            cedula
+                            nombres
+                            apellidos
+                            nombreCompleto
+                            usuario {
+                                id
+                                username
+                                rol { id }
+                            }
+                        }
+                    }
+                }
+            `;
+
+            return {
+                mutation: editMutation,
+                variables: {
+                    empleado: { id, ...this._cleanPassword(value) },
+                },
+            };
+        }
+    }
+
+    window.customElements.define(EmpleadoForm.is, EmpleadoForm);
+</script>

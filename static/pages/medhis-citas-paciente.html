@@ -1,0 +1,221 @@
+<link rel="import" href="../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../components/base-paciente-perfil.html">
+
+<script src="../bower_components/moment/moment.js"></script>
+<script>
+    /**
+        * `medhis-citas-paciente` Página que muestra las citas de un paciente.
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class MedhisCitasPaciente extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'medhis-citas-paciente';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Id del paciente.
+                    */
+                pacienteId: String,
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+
+                    header {
+                        margin-bottom: 1rem;
+                        padding: 1rem 1rem 0;
+                        position: relative;
+                    }
+
+                    header > h1 {
+                        margin: 0;
+                        color: #676767;
+                        line-height: 100%;
+                        font-weight: 400;
+                        font-size: 1.15rem;
+                        text-transform: uppercase;
+                    }
+
+                    header > small {
+                        font-size: 1rem;
+                        display: block;
+                        margin-top: .8rem;
+                        color: #959595;
+                    }
+
+                    paper-card  {
+                        width: 100%;
+                        margin-bottom: 10px;
+                    }
+
+                    .card-content {
+                        display: grid;
+                        padding: 0 15px;
+                        grid-template-columns: repeat(auto-fit, minmax(9.4rem, 1fr));
+                        border-bottom: 0.5px solid lightgrey;
+                    }
+
+                    .card-content p, .card-content .estado-cita {
+                        cursor: pointer;
+                    }
+
+                    .estado-cita {
+                        text-align: center;
+                        align-self: center;
+                        justify-self: center;
+                        text-transform: uppercase;
+                    }
+
+                    .circle {
+                        height: 1.5em;
+                        width: 1.5em;
+                        border-radius: 50%;
+                        display: inline-block;
+                    }
+                </style>
+
+                <graphql-query variables="[[_setQueryVariables(pacienteId)]]" result="{{data}}">
+                    query citasPacientePage($paciente: ID!) {
+                        paciente(id: $paciente) {
+                            id
+                            edad
+                            tipoDocumento
+                            nombreCompleto
+                            numeroDocumento
+                        }
+                        citas(paciente: $paciente) {
+                            results(ordering: "-inicio") {
+                                id
+                                canMove
+                                estadoActual
+                                autorizacion
+                                fechaAutorizacion
+                                estadoActualLabel
+                                estadosDisponibles
+                                horario {
+                                    id
+                                    start
+                                    sucursal { id, nombre }
+                                    medico { id, nombreCompleto }
+                                }
+                            }
+                        }
+                    }
+                </graphql-query>
+
+                <base-paciente-perfil paciente="[[data.paciente]]" selected-menu="citas">
+                    <header>
+                        <h1>Citas</h1>
+                    </header>
+
+                    <template is="dom-repeat" items="[[data.citas.results]]" as="cita">
+                        <paper-card>
+                            <div class="card-content">
+                                <p>
+                                    [[_formatHora(cita.horario.start)]] <br>
+                                    [[_formatFecha(cita.horario.start)]] <br>
+                                    [[cita.horario.medico.nombreCompleto]] - [[cita.horario.sucursal.nombre]]
+                                </p>
+                                <p>
+                                    <b class="label">Autorización</b> <br>
+                                    <template is="dom-if" if="[[cita.autorizacion]]">
+                                        [[cita.autorizacion]] <br>
+                                        [[cita.fechaAutorizacion]]
+                                    </template>
+                                    <template is="dom-if" if="[[!cita.autorizacion]]">
+                                        No tiene número de autorización ingresado.
+                                    </template>
+                                </p>
+                                <div class="estado-cita">
+                                    <span class="circle" style$="background-color: [[_colorEstadoCita(cita.estadoActual)]]"></span> <br>
+                                    <b class="label">[[cita.estadoActualLabel]]</b>
+                                </div>
+                            </div>
+                        </paper-card>
+                    </template>
+                </base-paciente-perfil>
+            `;
+        }
+
+        /**
+            * Instance of the element is created/upgraded. Useful for initializing
+            * state, set up event listeners, create shadow dom.
+            * @constructor
+            */
+        constructor() {
+            super();
+            this._estados = [
+                { value: 'NC', label: 'No confirmada', color: 'red' },
+                { value: 'CO', label: 'Confirmada', color: 'yellow' },
+                { value: 'CU', label: 'Cumplida', color: 'green' },
+                { value: 'TE', label: 'Atendida', color: 'green' },
+                { value: 'CA', label: 'Cancelada', color: 'blue' },
+                { value: 'EX', label: 'Excusada', color: 'gray' },
+                { value: 'NA', label: 'No asistio', color: 'purple' },
+            ];
+        }
+
+        /**
+            * Sets las variables para el query.
+            *
+            * @param {string} paciente Id del paciente.
+            * @return {object}
+            */
+        _setQueryVariables(paciente) {
+            return paciente ? { paciente } : {};
+        }
+
+        /**
+            * Formatea el valor ingresado.
+            *
+            * @param {number} value Valor a formatear
+            * @return {string} Valor formateado
+            */
+        _formatCurrency(value) {
+            return value !== undefined ? Number(value).toLocaleString('es', { style: 'currency', currency: 'COP' }) : value;
+        }
+
+        /**
+            * Formatea una fecha.
+            */
+        _formatFecha(fecha) {
+            return moment(fecha).format('DD/MM/YYYY');
+        }
+
+        /**
+            * Formatea la hora.
+            */
+        _formatHora(hora) {
+            return moment(hora).format('hh:mm A');
+        }
+
+        /**
+            * Indica el color del estado de la cita.
+            */
+        _colorEstadoCita(estadoActual) {
+            const actual = this._estados.find(estado => estado.value === estadoActual);
+            return actual ? actual.color : '';
+        }
+    }
+
+    window.customElements.define(MedhisCitasPaciente.is, MedhisCitasPaciente);
+</script>

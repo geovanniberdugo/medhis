@@ -1,0 +1,115 @@
+<link rel="import" href="../bower_components/vaadin-grid/theme/material/vaadin-grid-sorter.html">
+<link rel="import" href="../bower_components/vaadin-grid/theme/material/vaadin-grid.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../components/sucursal-form.html">
+
+<script>
+    /**
+     * `medhis-sucursales` Página para listar las sucursales de un cliente.
+     *
+     * @summary ShortDescription.
+     * @customElement
+     * @polymer
+     * @extends {Polymer.Element}
+     */
+    class MedhisSucursales extends Polymer.Element {
+        /**
+         * String providing the tag name to register the element under.
+         */
+        static get is() {
+            return 'medhis-sucursales';
+        }
+
+        /**
+         * Object describing property-related metadata used by Polymer features
+         */
+        static get properties() {
+            return {
+
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    paper-fab {
+                        position: absolute;
+                        right: 30px;
+                        bottom: calc(100vh - 530px);
+                    }
+                </style>
+
+                <graphql-query result="{{result}}">
+                    query todasSucursales { 
+                        sucursales { 
+                            results { 
+                                id
+                                telefono
+                                direccion
+                                nombre @title_case
+                                codigoContableRecibo
+                            } 
+                        } 
+                    }
+                </graphql-query>
+
+                <vaadin-grid id="table" items="[[result.sucursales.results]]" on-active-item-changed="edit">
+                    <vaadin-grid-column flex-grow="2">
+                        <template class="header">
+                            <vaadin-grid-sorter path="nombre" direction="asc">Nombre</vaadin-grid-sorter>
+                        </template>
+                        <template>[[item.nombre]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Dirección</template>
+                        <template>[[item.direccion]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Teléfono</template>
+                        <template>[[item.telefono]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Codigo contable recibo</template>
+                        <template>[[item.codigoContableRecibo]]</template>
+                    </vaadin-grid-column>
+                </vaadin-grid>
+
+                <paper-fab icon="my-icons:add" elevation="3" on-tap="create"></paper-fab>
+            `;
+        }
+
+        /** Retorna el formulario. */
+        static _getForm() {
+            return Medhis.sucursalFormInstance;
+        }
+
+        /**
+         * Muestra formulario para crear una sucursal.
+         */
+        create() {
+            const form = MedhisSucursales._getForm();
+            form.id = null;
+            form.opened = true;
+        }
+
+        /**
+         * Muestra el formulario para editar la sucursal.
+         */
+        edit(e) {
+            if (e.detail.value) {
+                const form = MedhisSucursales._getForm();
+                form.id = e.detail.value.id;
+                this.$.table.activeItem = null;
+                form.opened = true;
+            }
+        }
+    }
+
+    window.customElements.define(MedhisSucursales.is, MedhisSucursales);
+</script>

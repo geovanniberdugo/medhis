@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load l10n static %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+<style>
+    p {
+        margin: 1px 0;
+    }
+
+    thead tr {
+        background-color: lightgray !important;
+    }
+
+    .info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .red {
+        color: #ff2600;
+    }
+
+    @media print {
+        .print-card {
+            width: 50%;
+        }
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="print-card">
+    <section class="info">
+        <p><strong>Caja #:</strong> {{ caja.id }}</p>
+        <p><strong>Sucursal:</strong> {{ caja.sucursal }}</p>
+        <p><strong>Hecho por:</strong> {{ caja.empleado }}</p>
+        <p><strong>Fecha:</strong> {{ caja.fecha|date:"SHORT_DATE_FORMAT" }}</p>
+    </section>
+    <hr>
+    <table>
+        <thead>
+            <tr>
+                <th>Forma de pago</th>
+                <th>Valor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detalle in caja.detalles.all %}
+            <tr>
+                <td>{{ detalle.get_forma_pago_display }}</td>
+                <td class="center">{{ detalle.valor|floatformat }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td>Pagos hechos</td>
+                <td class="center red"> -{{ caja.pagos|floatformat }}</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Total</th>
+                <th class="center">{{ caja.total|floatformat }}</th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<paper-fab id="print-button" class="hidden-print" icon="my-icons:print"></paper-fab>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-print-detalle-caja.js' %}"></script>
+{% endblock js %}

@@ -1,0 +1,187 @@
+<link rel="import" href="../../bower_components/vaadin-tabs/theme/material/vaadin-tabs.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="historia-clinica-content.html">
+
+<script>
+    /**
+     * `historia-clinica-formato` Formato a llenar para la historia.
+     *
+     * @customElement
+     * @polymer
+     * @extends {Polymer.Element}
+     */
+    class HistoriaClinicaFormato extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'historia-clinica-formato';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Formato de la historia.
+                    */
+                formato: {
+                    type: Object,
+                    value: () => ({}),
+                },
+
+                /**
+                    * Datos de la historia.
+                    */
+                data: {
+                    type: Object,
+                    value: () => ({}),
+                },
+
+                /**
+                    * Page seleccionado
+                    */
+                selectedPage: {
+                    type: Object,
+                    value: () => ({}),
+                },
+
+                /** Indica si el tab es invalido. */
+                invalid: {
+                    type: Boolean,
+                    value: false,
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    main {
+                        display: grid;
+                        grid-template-columns: 20% 1fr;
+                    }
+
+                    vaadin-tab {
+                        white-space: inherit;
+                    }
+
+                    vaadin-tab.invalid {
+                        color: var(--error-color);
+                        --material-primary-color: var(--error-color);
+                    }
+
+                    .page {
+                        padding: 15px;
+                    }
+                </style>
+
+                <main>
+                    <vaadin-tabs id="tabs" orientation="vertical" selected="{{selected}}">
+                        <template is="dom-repeat" items="[[formato.order]]">
+                            <vaadin-tab>[[_getTabName(item)]]</vaadin-tab>
+                        </template>
+                    </vaadin-tabs>
+
+                    <iron-pages id="pages" selected="[[selected]]" selected-item="{{selectedPage}}">
+                        <template is="dom-repeat" items="[[formato.order]]">
+                            <div class="page">
+                                <historia-clinica-content fields="[[_getTabFields(item)]]" data="[[_getData(item, data)]]"
+                                    calculations="[[_getTabCalculations(item, formato)]]" key="[[item]]"
+                                    on-validate-historia="_checkValidity" on-field-calculated="_fieldCalculated">
+                                </historia-clinica-content>
+                            </div>
+                        </template>
+                    </iron-pages>
+                </main>
+            `;
+        }
+
+        /**
+            * Obtiene el nombre del tab basado en el key.
+            * @param {string} key
+            * @return {string}
+            */
+        _getTabName(key) {
+            return this.formato[key].nombre;
+        }
+
+        /**
+            * Obtiene los campos del tab basado en el key.
+            * @param {string} key
+            * @return {Object}
+            */
+        _getTabFields(key) {
+            return this.formato[key].fields;
+        }
+
+        /**
+            * Obtiene los datos del tab basado en el key.
+            *
+            * @param {string} key Nombre de la llave en los datos.
+            * @param {object} data Data de la historia.
+            * @return {Object}
+            */
+        _getData(key, data) {
+            if (!(key in data)) {
+                data[key] = {};
+            }
+
+            return data[key];
+        }
+
+        /**
+            * Obtiene los campos del tab que son calculados basado en el key.
+            * @param {string} key
+            * @return {Object}
+            */
+        _getTabCalculations(key, contenido) {
+            return contenido[key].calculated || {};
+        }
+
+        _fieldCalculated(e) {
+            const key = e.detail.key;
+            const data = e.detail.data;
+            this.data[key] = data;
+        }
+
+        _checkValidity(e) {
+            const index = this.$.pages.indexOf(e.target.parentElement);
+            if (e.target.invalid) {
+                this.$.tabs.items[index].classList.add('invalid');
+            } else {
+                this.$.tabs.items[index].classList.remove('invalid');
+            }
+
+            this.invalid = e.target.invalid;
+            this.dispatchEvent(new CustomEvent('validate-historia'));
+        }
+
+        /**
+            * Valida los datos del formato
+        */
+        validate() {
+            const historias = this.shadowRoot.querySelectorAll('historia-clinica-content');
+            const validaciones = [...historias].map(e => e.validate());
+            const valid = validaciones.every(e => e === true);
+
+            this.invalid = !valid;
+            this.dispatchEvent(new CustomEvent('validate-historia'));
+            return valid;
+        }
+
+        save() {
+            const content = this.selectedPage.querySelector('historia-clinica-content');
+            content.save();
+        }
+    }
+
+    window.customElements.define(HistoriaClinicaFormato.is, HistoriaClinicaFormato);
+</script>

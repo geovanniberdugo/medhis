@@ -1,0 +1,14 @@
+{% if ANALYTICS %}
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-98666751-2"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    const page = document.location.pathname.replace(/[0-9]\/?/g, '');
+    gtag('config', 'UA-98666751-2', {
+        'page_path': page,
+    });
+</script>
+{% endif %}

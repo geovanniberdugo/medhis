@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Tratamientos no terminados por profesional" %}</h1>
+    <small>Muestra los tratamientos no terminados segun el profesional y el rango de fechas segun su inicio.</small>
+</header>
+
+<mh-tratamientos-no-terminados-profesional></mh-tratamientos-no-terminados-profesional>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-tratamientos-no-terminados-profesional.js' %}"></script>
+{% endblock js %}

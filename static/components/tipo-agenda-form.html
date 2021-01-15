@@ -1,0 +1,287 @@
+<link rel="import" href="../bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-form/iron-form.html">
+
+<script>
+    /**
+        * `tipo-agenda-form` Formulario para la creación o edición de tipos de agenda.
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class TipoAgendaForm extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'tipo-agenda-form';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Indica si el formulario se esta mostrando.
+                    */
+                opened: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+
+                /**
+                    * Acción a realizar en el formulario. Puede ser Crear o Editar dependiendo del valor de id.
+                    */
+                accion: {
+                    type: String,
+                    value: 'Crear',
+                },
+
+                /**
+                    * ID del objeto a editar
+                    */
+                id: {
+                    type: Number,
+                    value: null,
+                    observer: '_idChanged'
+                },
+
+                /**
+                    * Datos ingresados en el formulario.
+                    */
+                value: {
+                    type: Object,
+                    value: () => { return {}; },
+                }
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    * {
+                        box-sizing: border-box;
+                    }
+
+                    paper-dialog {
+                        width: 40%;
+                    }
+                </style>
+
+                <graphql-query id="datos-objeto-query" hold>
+                    query datosTipoAgenda ($id: ID!) { 
+                        tipoAgenda(id: $id) { 
+                            id 
+                            nombre
+                            duracion
+                        }
+                    }
+                </graphql-query>
+
+                <paper-dialog modal opened="{{opened}}">
+                    <h2>Tipo de Agenda</h2>
+                    <paper-dialog-scrollable>
+                        <iron-form id="form">
+                            <form>
+                                <paper-input label="Nombre*" required auto-validate value="{{value.nombre}}"></paper-input>
+                                <paper-input label="Duración*" required auto-validate value="{{value.duracion}}"
+                                    placeholder="HH:MM:SS"></paper-input>
+                            </form>
+                        </iron-form>
+                    </paper-dialog-scrollable>
+                    <div class="buttons">
+                        <paper-button dialog-dismiss>Cancelar</paper-button>
+                        <paper-button on-tap="save">[[accion]]</paper-button>
+                    </div>
+                </paper-dialog>
+            `;
+        }
+
+        /**
+            * Use for one-time configuration of your component after local DOM is initialized. 
+            */
+        ready() {
+            super.ready();
+
+            Polymer.RenderStatus.afterNextRender(this, () => {
+                this.client = this.shadowRoot.querySelector('graphql-query')._getClient();
+            });
+        }
+
+        /** 
+            * Observer method for id property. renderiza el formulario con los datos del objeto o vacio cuando
+            el id es null.
+            */
+        _idChanged(newValue, oldValue) {
+            let accion;
+            if (newValue) {
+                accion = 'Editar';
+                this._obtenerDatosObjeto(newValue);
+            }
+            else {
+                accion = 'Crear';
+                this._cleanFormulario();
+            }
+
+            this.accion = accion;
+        }
+
+        /** 
+            * Obtiene los datos del objeto.
+            * 
+            * @param {number} id Id del objeto a buscar.
+            */
+        _obtenerDatosObjeto(id) {
+            const query = this.$['datos-objeto-query'];
+            query.variables = { id };
+            query.execute().result().then(result => {
+                let data = result.data.tipoAgenda;
+                if (data) {
+                    this._fillFormulario(data);
+                }
+                else {
+                    this._cleanFormulario();
+                }
+            });
+        }
+
+        /** 
+            * Limpia el formulario.
+            */
+        _cleanFormulario() {
+            this.value = {};
+        }
+
+        /** 
+            * LLena el formulario con los datos obtenidos.
+            */
+        _fillFormulario(data) {
+            this.value = {
+                nombre: data.nombre,
+                duracion: data.duracion
+            };
+        }
+
+        /** 
+            * Despacha un evento si hubo un error al momento de ejecutar alguna mutación.
+            * @event notify-toast-error
+            */
+        _dispatchErrorAdministrativo() {
+            this.dispatchEvent(new CustomEvent('notify-toast-error', {
+                bubbles: true,
+                composed: true,
+                detail: {
+                    text: 'Oops! Hubo un error por favor comunicate con un administrador.'
+                }
+            }));
+        }
+
+        /** 
+            * Crea un nuevo objeto con los datos ingresados. @todo Handle form errors
+            * 
+            * @param {object} data Datos del objeto. 
+            */
+        _create(data) {
+            const createMutation = Apollo.gql`mutation crearTipoAgenda($tipoAgenda: AgendaCreateGenericType!) {
+                crearTipoAgenda(input: $tipoAgenda) {
+                    ok
+                    errors { field, messages }
+                    tipoAgenda {
+                        id
+                        nombre @title_case
+                        duracion
+                    }
+                }
+            }`;
+
+            this.client.mutate({
+                mutation: createMutation,
+                variables: { tipoAgenda: data },
+                refetchQueries: ['todosTiposAgenda']
+            }).
+            then(result => {
+                let data = result.data.crearTipoAgenda;
+                if (data.ok) {
+                    this.opened = false;
+                    this._cleanFormulario();
+                }
+            }).
+            catch(error => {
+                console.error(error);
+                this._dispatchErrorAdministrativo();
+            });
+        }
+
+        /** 
+            * Edita el objeto escogido. @todo handle form errors.
+            * 
+            * @param {number} id Id del objeto a editar.
+            * @param {object} data Datos del objeto. 
+            */
+        _edit(id, data) {
+            const editMutation = Apollo.gql`mutation editarTipoAgenda($tipoAgenda: AgendaUpdateGenericType!) {
+                editarTipoAgenda(input: $tipoAgenda) {
+                    ok
+                    errors { field, messages }
+                    tipoAgenda {
+                        id
+                        nombre @title_case
+                        duracion
+                    }
+                }
+            }`;
+
+            this.client.mutate({
+                mutation: editMutation,
+                variables: { tipoAgenda: { id, ...data } }
+            }).
+            then(result => {
+                let data = result.data.editarTipoAgenda;
+                if (data.ok) {
+                    this.opened = false;
+                    this.id = null;
+                }
+            }).
+            catch(error => {
+                console.error(error);
+                this._dispatchErrorAdministrativo();
+            });
+        }
+
+        /** 
+            * Valida el formulario.
+            * @return {bool} true si es valido, de lo contrario retorna false.
+            */
+        validate() {
+            return this.$.form.validate();
+        }
+
+        /** 
+            * Guarda la información del objeto.
+            */
+        save() {
+            if (this.validate()) {
+                if (this.id) {
+                    this._edit(this.id, this.value);
+                }
+                else {
+                    this._create(this.value);
+                }
+            }
+        }
+
+    }
+
+    window.customElements.define(TipoAgendaForm.is, TipoAgendaForm);
+</script>

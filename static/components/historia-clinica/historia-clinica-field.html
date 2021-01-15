@@ -1,0 +1,214 @@
+<link rel="import" href="../../bower_components/vaadin-combo-box/theme/material/vaadin-combo-box.html">
+<link rel="import" href="../../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-if.html">
+<link rel="import" href="../../bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../components/es-date-picker.html">
+<link rel="import" href="historia-clinica-relationship-field.html">
+
+<script>
+    class HistoriaClinicaField extends Polymer.Element {
+        static get is() { return 'historia-clinica-field'; }
+
+        static get properties() {
+            return {
+                field: Object,
+                name: {
+                    type: String,
+                    readOnly: true,
+                    reflectToAttribute: true,
+                },
+
+                /**
+                    * Llave del campo en data.
+                    */
+                key: {
+                    type: String,
+                    value: '',
+                },
+
+                /**
+                    * Datos del campo.
+                    */
+                data: {
+                    type: Object,
+                    notify: true,
+                    value() { return {}; },
+                },
+
+                value: String,
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    h3 {
+                        border-bottom: 1px solid #eee;
+                        padding-bottom: 9px;
+                    }
+
+                    vaadin-date-picker {
+                        width: 100%;
+                    }
+
+                    vaadin-combo-box {
+                        width: 100%
+                    }
+                </style>
+
+                <template is="dom-if" if="[[_isInput(field.tipo)]]">
+                    <paper-input id="input" auto-validate type="[[field.tipo]]" label="[[field.nombre]]" 
+                        value="[[_getData(key, data.*)]]" on-value-changed="_setValueOnData" required="[[field.required]]"
+                        disabled="[[field.disabled]]">
+                    </paper-input>            
+                </template>
+                <template is="dom-if" if="[[_isNumberInput(field.tipo)]]">
+                    <paper-input id="input" auto-validate type="number" label="[[field.nombre]]" step="any"
+                        value="[[_getData(key, data.*)]]" on-value-changed="_setValueOnData" required="[[field.required]]"
+                        disabled="[[field.disabled]]">
+                    </paper-input>
+                </template>
+                <template is="dom-if" if="[[_isTextArea(field.tipo)]]">
+                    <paper-textarea id="input" auto-validate label="[[field.nombre]]" rows="4" required="[[field.required]]"
+                        value="[[_getData(key, data.*)]]" on-value-changed="_setValueOnData" disabled="[[field.disabled]]">
+                    </paper-textarea>
+                </template>
+                <template is="dom-if" if="[[_isTitulo(field.tipo)]]">
+                    <h3>[[field.nombre]]</h3>
+                </template>
+                <template is="dom-if" if="[[_isTitulo2(field.tipo)]]">
+                    <h4>[[field.nombre]]</h4>
+                </template>
+                <template is="dom-if" if="[[_isSpace(field.tipo)]]">
+                    <br>
+                </template>
+                <template is="dom-if" if="[[_isSwitch(field.tipo)]]">
+                    <paper-toggle-button id="input" checked="[[_getData(key, data.*)]]" on-checked-changed="_setValueOnData"
+                        disabled="[[field.disabled]]">
+                        [[field.nombre]]
+                    </paper-toggle-button>
+                </template>
+                <template is="dom-if" if="[[_isDate(field.tipo)]]">
+                    <vaadin-date-picker id="input" auto-validate label=[[field.nombre]] value="[[_getData(key, data.*)]]"
+                        required="[[field.required]]" on-value-changed="_setValueOnData" disabled="[[field.disabled]]">
+                    </vaadin-date-picker>
+                </template>
+                <template is="dom-if" if="[[_isSelect(field.tipo)]]">
+                    <vaadin-combo-box id="input" auto-validate label="[[field.nombre]]" value="[[_getData(key, data.*)]]"
+                        required="[[field.required]]" items="[[field.options]]" on-value-changed="_setValueOnData"
+                        disabled="[[field.disabled]]">
+                    </vaadin-combo-box>
+                </template>
+                <template is="dom-if" if="[[_isRelacion(field.tipo)]]">
+                    <historia-clinica-relationship-field id="input" field="[[field]]" value="[[_getData(key, data.*)]]"
+                        on-value-changed="_setValueOnData" on-selected-item-changed="_setSelectedItemOnData">
+                    </historia-clinica-relationship-field>
+                </template>
+            `;
+        }
+
+        ready() {
+            super.ready();
+            this._setName(this.field.nombre);
+            Polymer.RenderStatus.afterNextRender(this, () => {
+                this._input = this.shadowRoot.querySelector('#input');
+                setDatePickerLocale(this.shadowRoot);
+            });
+        }
+
+        /**
+            * Setea el valor del input en data.
+            */
+        _setValueOnData(e) {
+            if (this.key) {
+                const { tipo } = this.field;
+                const value = this._isNumberInput(tipo) ? Number(e.detail.value) : e.detail.value;
+                this.set(`data.${this.key}`, value);
+            }
+            this.value = e.detail.value;
+        }
+
+        /**
+            * Sets selected Item de un input de relacion en data.
+            */
+        _setSelectedItemOnData(e) {
+            if (this.key) {
+                this.data[`${this.key}Item`] = e.detail.value;
+            }
+        }
+
+        /**
+            * Obtiene el valor de data para el campo
+            *
+            * @param {string} key Nombre de la llave en data.
+            * @param {object} change Cualquier cambio en data.
+            */
+        _getData(key, change) {
+            if (key) {
+                return this.get(key, change.base);
+            }
+
+            if (this._isSwitch(this.field.tipo)) {
+                return false;
+            }
+
+            return '';
+        }
+
+        _isInput(tipo) {
+            return tipo === 'text';
+        }
+
+        _isNumberInput(tipo) {
+            return tipo === 'number';
+        }
+
+        _isTextArea(tipo) {
+            return tipo === 'textarea';
+        }
+
+        _isTitulo(tipo) {
+            return tipo === 'titulo';
+        }
+
+        _isTitulo2(tipo) {
+            return tipo === 'titulo2';
+        }
+
+        _isSpace(tipo) {
+            return tipo === 'space';
+        }
+
+        _isSwitch(tipo) {
+            return tipo === 'switch';
+        }
+
+        _isDate(tipo) {
+            return tipo === 'date';
+        }
+
+        _isSelect(tipo) {
+            return tipo === 'select';
+        }
+
+        _isRelacion(tipo) {
+            return tipo === 'relacion';
+        }
+
+        validate() {
+            if (!this._isTitulo(this.field.tipo) && !this._isTitulo2(this.field.tipo) && !this._isSpace(this.field.tipo) && !this._isSwitch(this.field.tipo)) {
+                return this._input.validate();
+            }
+
+            return true;
+        }
+    }
+
+    window.customElements.define(HistoriaClinicaField.is, HistoriaClinicaField);
+</script>

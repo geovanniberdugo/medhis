@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block imports %}
+    <link rel="import" href="{% static 'pages/medhis-search-result.html' %}">
+{% endblock imports %}
+
+{% block content %}
+    <header class="header-title">
+        <h1>{% trans "resultados de la busqueda" %}</h1>
+    </header>
+
+    <medhis-search-result pacientes='{{ pacientes }}'></medhis-search-result>
+{% endblock content %}

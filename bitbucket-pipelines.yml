@@ -1,0 +1,18 @@
+image: python:3.7.3
+
+pipelines:
+  custom:
+    deploy-to-staging:
+        - step:
+            deployment: staging
+            script:
+              - sed -i "s/SITE/${SITE}/g" deploy_tools/deploy.sh
+              - sed -i "s/COMMIT/${BITBUCKET_COMMIT}/g" deploy_tools/deploy.sh
+              - ssh ingeniarte2@50.116.33.180 'bash -s' < deploy_tools/deploy.sh
+    deploy-to-production:
+        - step:
+            deployment: production
+            script:
+              - sed -i "s/SITE/${SITE}/g" deploy_tools/deploy.sh
+              - sed -i "s/COMMIT/${BITBUCKET_COMMIT}/g" deploy_tools/deploy.sh
+              - ssh ingeniarte2@50.116.33.180 'bash -s' < deploy_tools/deploy.sh

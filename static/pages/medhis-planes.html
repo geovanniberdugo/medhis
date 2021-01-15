@@ -1,0 +1,118 @@
+<link rel="import" href="../bower_components/vaadin-grid/theme/material/vaadin-grid.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../components/plan-form.html">
+
+<script>
+    /**
+     * `medhis-planes` Página para listar los planes de un cliente.
+     *
+     * @customElement
+     * @polymer
+     * @extends {Polymer.Element}
+     */
+    class MedhisPlanes extends Polymer.Element {
+        /**
+         * String providing the tag name to register the element under.
+         */
+        static get is() {
+            return 'medhis-planes';
+        }
+
+        /**
+         * Object describing property-related metadata used by Polymer features
+         */
+        static get properties() {
+            return {
+                /**
+                 * Id del cliente.
+                 */
+                cliente: {
+                    type: String,
+                    value: '',
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    * {
+                        box-sizing: border-box;
+                    }
+
+                    paper-fab {
+                        position: absolute;
+                        right: 30px;
+                        bottom: calc(100vh - 530px);
+                    }
+                </style>
+
+                <graphql-query result="{{result}}" variables="[[_setPlanesQueryVariables(cliente)]]">
+                    query planesCliente($cliente: ID!) { 
+                        planes(cliente: $cliente) { 
+                            results {
+                                id 
+                                nombre @title_case 
+                            }
+                        } 
+                    }
+                </graphql-query>
+
+                <vaadin-grid id="table" items="[[result.planes.results]]" on-active-item-changed="edit">
+                    <vaadin-grid-column>
+                        <template class="header">Nombre</template>
+                        <template>
+                            [[item.nombre]]
+                        </template>
+                    </vaadin-grid-column>
+                </vaadin-grid>
+
+                <paper-fab icon="my-icons:add" elevation="3" on-tap="create"></paper-fab>
+            `;
+        }
+
+        /**
+         * Sets las variables para obtener los planes de un cliente.
+         *
+         * @param {string} cliente Id del cliente.
+         * @return {object}
+         */
+        _setPlanesQueryVariables(cliente) {
+            return cliente ? { cliente } : {};
+        }
+
+        /** Retorna el formulario. */
+        static _getForm() {
+            return Medhis.planFormInstance;
+        }
+
+        /**
+         * Muestra formulario para crear un plan.
+         */
+        create() {
+            const form = MedhisPlanes._getForm();
+            form.id = null;
+            form.opened = true;
+        }
+
+        /**
+         * Muestra el formulario para editar el plan.
+         */
+        edit(e) {
+            if (e.detail.value) {
+                const form = MedhisPlanes._getForm();
+                form.id = e.detail.value.id;
+                this.$.table.activeItem = null;
+                form.opened = true;
+            }
+        }
+    }
+
+    window.customElements.define(MedhisPlanes.is, MedhisPlanes);
+</script>

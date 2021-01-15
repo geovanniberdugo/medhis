@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Relación de tratamientos terminados por profesional" %}</h1>
+    <small>{% trans "Muestra los tratamientos terminados que ya han sido auditados segun el profesional y el rango de fechas de terminacion." %}</small>
+</header>
+
+<mh-tratamientos-terminados-profesional></mh-tratamientos-terminados-profesional>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-tratamientos-terminados-profesional.js' %}"></script>
+{% endblock js %}

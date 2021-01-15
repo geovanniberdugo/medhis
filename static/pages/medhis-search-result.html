@@ -1,0 +1,61 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-list/iron-list.html">
+<link rel="import" href="../components/paciente-info.html">
+
+<script>
+    /**
+     * `medhis-search-result` Página que muestra los resultados de la busqueda
+     *
+     * @summary ShortDescription.
+     * @customElement
+     * @polymer
+     * @extends {Polymer.Element}
+     */
+    class MedhisSearchResult extends Polymer.Element {
+        /**
+         * String providing the tag name to register the element under.
+         */
+        static get is() {
+            return 'medhis-search-result';
+        }
+
+        /**
+         * Object describing property-related metadata used by Polymer features
+         */
+        static get properties() {
+            return {
+                /**
+                 * Lista de pacientes
+                 */
+                pacientes: {
+                    type: Array,
+                    value: () => [],
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    iron-list {
+                        height: calc(100vh - 150px);
+                    }
+
+                    .paciente-info {
+                        width: 410px;
+                        height: 245px;
+                    }
+                </style>
+                <iron-list items="[[pacientes]]" grid>
+                    <template>
+                        <div class="paciente-info">
+                            <paciente-info paciente="[[item]]"></paciente-info>
+                        </div>
+                    </template>
+                </iron-list>
+            `;
+        }
+    }
+
+    window.customElements.define(MedhisSearchResult.is, MedhisSearchResult);
+</script>

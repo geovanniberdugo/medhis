@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Tratamientos para pagos de medicos{% endblock title %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Tratamientos para pagos de medicos" %}</h1>
+</header>
+
+<mh-tratamientos-pago-medicos></mh-tratamientos-pago-medicos>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-tratamientos-pago-medicos.js' %}"></script>
+{% endblock js %}

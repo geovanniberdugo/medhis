@@ -1,0 +1,82 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="category-element.html">
+
+<script>
+    /**
+        * `categories-element` Description
+        *
+        * @summary ShortDescription.
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class CategoriesElement extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'categories-element';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                 * list of category
+                 */
+                items: Array,
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+                    .categories-container {
+                        width: 100%;
+                        margin-top: 1px;
+                        padding-bottom: 5px;
+                        position: relative;
+                    }
+                    category-element {
+                        display: inline-block;
+                        vertical-align: -webkit-baseline-middle;
+                    }
+                </style>
+                <div class="categories-container">
+                    <template is="dom-repeat" items="{{items}}">
+                        <category-element id="category" disabled="{{item.hidden}}" on-click="_clickOnCategory" label="{{item.label}}" color="{{item.color}}"></category-element>
+                    </template>
+                </div>
+            `;
+        }
+
+        /**
+         * Fired when a category is clicked
+         *
+         */
+        _clickOnCategory(e) {
+            const selectedCategory = Polymer.dom(e).localTarget;
+            const disabledValue = selectedCategory.disabled;
+
+            if (disabledValue) {
+                selectedCategory.setAttribute('disabled', 'false');
+                selectedCategory.removeAttribute('disabled');
+            } else {
+                selectedCategory.setAttribute('disabled', 'true');
+            }
+            // Fire event to inform that a category has been clicked.
+            const detail = {
+                disabled: !disabledValue,
+                category: e.model.item,
+            };
+            this.dispatchEvent(new CustomEvent('category-click', { detail }));
+        }
+    }
+
+    window.customElements.define(CategoriesElement.is, CategoriesElement);
+</script>

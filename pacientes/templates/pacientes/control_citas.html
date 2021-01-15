@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load l10n static %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+<style>
+    .logo-history {
+        display: grid;
+        text-align: center;
+        grid-template-columns: 1fr 1fr 1fr; /* 3 cols */ 
+        -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
+        filter: grayscale(100%);  
+    }
+
+    p {
+        margin: 1px 0;
+    }
+
+    table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        width: 100%;
+    }
+
+    table, th, td {
+        border: 1px solid black;
+    }
+
+    .info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    #signature {
+        text-align: right;
+        padding-block-start: 20px;
+    }
+
+    #signature p {
+        margin: 0px;
+        padding-right: 20%;
+    }
+
+    @media print {
+        .logo-history {
+            grid-template-columns: 1fr 2fr;
+        }
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="print-card">
+    <div class="logo-history">
+        {% with institucion=tratamiento.orden.institucion %}
+        <div>
+            {% if institucion.logo %}
+            <img src="{{ institucion.logo.url }}" alt="Logo institucion" width="80" height="30">
+            {% endif %}
+        </div>
+        <div>
+            <strong class="big-text">{{ institucion.razon_social }}</strong><br>
+            <strong class="big-text">{{ institucion.get_tipo_documento_display }} {{ institucion.identificacion }}</strong><br>
+            {% for sucursal in sucursales %}
+            <strong class="small-text">{{ sucursal.direccion }}</strong><br>
+            {% endfor %}
+            <strong class="small-text">{% firstof institucion.telefono "" %}</strong>
+        </div>
+        {% endwith %}
+    </div>
+    <hr>
+
+    <div class="info">
+        {% with orden=tratamiento.orden %}
+        <p><strong>Paciente:</strong> {{ orden.paciente|title }}</p>
+        <p><strong>Convenio:</strong> {{ orden.plan|title }}</p>
+        <p><strong>Medico:</strong> {{ tratamiento.medicos.0|title }}</p>
+        <p><strong># citas:</strong> {{ tratamiento.cantidad }}</p>
+        {% endwith %}
+    </div>
+    <hr>
+    <table>
+        <thead>
+            <tr>
+                <th></th>
+                <th>Año</th>
+                <th>Mes</th>
+                <th>Dia</th>
+                <th>Hora</th>
+                <th style="width: 25px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cita in tratamiento.citas.all %}
+            <tr>
+                <td class="center">{{ forloop.counter }}</td>
+                <td class="center">{{ cita.start|date:"Y" }}</td>
+                <td class="center">{{ cita.start.month }}</td>
+                <td class="center">{{ cita.start.day }}</td>
+                <td class="center">{{ cita.start|date:"g:i A" }}</td>
+                <td class="center">{% if cita.estado_actual != 'NC' and cita.estado_actual != 'CO' and cita.estado_actual != 'CU' %}{{ cita.estado_display }}{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <section id="signature">
+        {% if empleado.firma %}
+        <img src="{{ empleado.firma.url }}" alt="Logo institucion" width="200" height="40" style="padding-right: 20%;">
+        <p><strong>{{ empleado }}</strong></p>
+        <p>{% firstof empleado.especialidad_historia|title '' %}</p>
+        {% endif %}
+    </section>
+</div>
+
+<paper-fab id="print-button" class="hidden-print" icon="my-icons:print"></paper-fab>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-control-citas.js' %}"></script>
+{% endblock js %}

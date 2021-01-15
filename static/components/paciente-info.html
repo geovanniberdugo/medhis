@@ -1,0 +1,203 @@
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/polymer/lib/elements/dom-if.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-image/iron-image.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../my-icons.html">
+
+<script src="../bower_components/moment/min/moment.min.js"></script>
+<script>
+    /**
+        * `paciente-info` Muestra la información de un paciente.
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class PacienteInfo extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'paciente-info';
+        }
+    
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Datos del paciente
+                    */
+                paciente: Object,
+
+                /**
+                    * Description for prop
+                    */
+                nombreCompleto: {
+                    type: String,
+                    computed: '_nombreCompleto(paciente.primer_nombre, paciente.segundo_nombre, paciente.primer_apellido, paciente.segundo_apellido)',
+                },
+
+                /**
+                    * Permite que el ocupe todo el ancho del contenedor en donde se encuentre.
+                    */
+                fullWidth: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true,
+                },
+
+                /**
+                    * Permite que el ocupe todo el alto del contenedor en donde se encuentre.
+                    */
+                fullHeight: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true,
+                },
+
+                /**
+                    * Muestra el componente sin elevación.
+                    */
+                flat: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true,
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+
+                        --paper-card: {
+                            width: var(--paciente-info-width, 400px);
+                            height: var(--paciente-info-height, auto);
+                        };
+
+                        --paper-card-content: {
+                            display: flex;
+                        };
+                    }
+
+                    :host([full-width]) {
+                        --paciente-info-width: 100%;
+                    }
+
+                    :host([full-height]) {
+                        --paciente-info-height: 100%;
+                    }
+
+                    :host([flat]) paper-card {
+                        box-shadow: none;
+                        border: 1px solid #e8e8e8;
+                    }
+
+                    iron-image {
+                        width: 150px;
+                        height: 150px;
+                        margin-right: 20px;
+                    }
+
+                    .info > * {
+                        margin: 0px;
+                    }
+
+                    .card-actions > a {
+                        text-decoration: none;                
+                    }
+                </style>
+
+                <paper-card id="card">
+                    <div class="card-content">
+                        <iron-image src="[[paciente.foto]]" sizing="cover" fade preload placeholder="/static/img/profile-none.png"></iron-image>
+                        <div class="info">
+                            <h4><strong>[[nombreCompleto]]</strong></h4>
+                            <p><small>[[paciente.tipo_documento]]: [[paciente.numero_documento]]</small></p>
+                            <p><small>Edad: [[_getEdad(paciente.fecha_nacimiento)]]</small></p>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <template is="dom-if" if="[[paciente.edit_link]]">
+                            <a href="[[paciente.edit_link]]" title="Editar paciente">
+                                <paper-icon-button icon="my-icons:edit"></paper-icon-button>
+                            </a>
+                        </template>
+                        <template is="dom-if" if="[[paciente.historias_link]]">
+                            <a href="[[paciente.historias_link]]" title="Ver historias">
+                                <paper-icon-button icon="my-icons:menu"></paper-icon-button>
+                            </a>
+                        </template>
+                        <template is="dom-if" if="[[paciente.citas_url]]">
+                            <a href="[[paciente.citas_url]]" title="Ver citas">
+                                <paper-icon-button icon="my-icons:event"></paper-icon-button>
+                            </a>
+                        </template>
+                        <template is="dom-if" if="[[paciente.tratamientos_url]]">
+                            <a href="[[paciente.tratamientos_url]]" title="Ver tratamientos">
+                                <paper-icon-button icon="my-icons:event"></paper-icon-button>
+                            </a>
+                        </template>
+                        <template is="dom-if" if="[[paciente.pagos_url]]">
+                            <a href="[[paciente.pagos_url]]" title="Ver pagos">
+                                <paper-icon-button icon="my-icons:attach-money"></paper-icon-button>
+                            </a>
+                        </template>
+                    </div>
+                </paper-card>
+            `;
+        }
+
+        /**
+            * Computed method for the property nombreCompleto.
+            *
+            * @param {string} primerNombre
+            * @param {string} segundoNombre
+            * @param {string} primerApellido
+            * @param {string} segundoApellido
+            * @return {string}
+            */
+        _nombreCompleto(primerNombre, segundoNombre, primerApellido, segundoApellido) {
+            const nombre = `${primerNombre} ${segundoNombre} ${primerApellido} ${segundoApellido}`;
+            return nombre.toUpperCase();
+        }
+
+        /**
+            * Calcula la edad del paciente
+            *
+            * @param {string} fechaNacimiento
+        */
+        _getEdad(fechaNacimiento) {
+            if (fechaNacimiento) {
+                const today = moment();
+                const birthDate = moment.utc(fechaNacimiento);
+
+                let age = today.year() - birthDate.year();
+                const dMonth = today.month() - birthDate.month();
+
+                if (age === 0 && dMonth === 0) {
+                    return `${today.date() - birthDate.date()} Dias`;
+                }
+
+                if (age === 0) {
+                    return `${dMonth} Meses`;
+                }
+
+                if (dMonth < 0 || (dMonth === 0 && today.date() < birthDate.date())) {
+                    age--;
+                }
+
+                return `${age} Años`;
+            }
+
+            return '';
+        }
+    }
+    
+    window.customElements.define(PacienteInfo.is, PacienteInfo);
+</script>

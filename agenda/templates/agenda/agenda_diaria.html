@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}agenda diaria{% endblock title %}
+
+{% block content %}
+    <header class="header-title">
+        <h1>{% trans "agenda diaria" %}</h1>
+    </header>
+
+    <mh-agenda-diaria {% if perms.agenda.puede_ver_todas_citas %}todas-citas{% endif %}
+        base-url="{% url 'agenda:print' %}">
+    </mh-agenda-diaria>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-agenda-diaria.js' %}"></script>
+{% endblock js %}

@@ -1,0 +1,89 @@
+<link rel="import" href="../bower_components/vaadin-combo-box/theme/material/vaadin-combo-box.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<script>
+    /**
+        * `medicos-combo` Combo-box con las sucursales.
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class MedicosCombo extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'medicos-combo';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Indica si el combo es requerido
+                    */
+                required: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                /**
+                    * Indica si el combo se muestra
+                    */
+                hidden: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                value: {
+                    type: String,
+                    notify: true,
+                },
+
+                /**
+                    * Item seleccionado
+                    */
+                selectedItem: {
+                    type: Object,
+                    notify: true,
+                },
+            };
+        }
+    
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+
+                    vaadin-combo-box {
+                        width: 100%;
+                    }
+                </style>
+
+                <graphql-query result="{{result}}">
+                    query sucursales {
+                        medicos: empleados(medicos: true) {
+                            results {
+                                id
+                                nombreCompleto
+                            }
+                        }
+                    }
+                </graphql-query>
+
+                <vaadin-combo-box label="Medico" required="[[required]]" hidden="[[hidden]]"
+                    item-label-path="nombreCompleto" item-value-path="id" items="[[result.medicos.results]]"
+                    value="{{value}}" selected-item="{{selectedItem}}">
+                </vaadin-combo-box>
+            `;
+        }
+    }
+
+    window.customElements.define(MedicosCombo.is, MedicosCombo);
+</script>

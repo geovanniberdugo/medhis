@@ -1,0 +1,232 @@
+<link rel="import" href="../bower_components/vaadin-combo-box/theme/material/vaadin-combo-box.html">
+<link rel="import" href="../bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/iron-form/iron-form.html">
+<link rel="import" href="../components/cru-form-mixin.html">
+
+<script>
+    /**
+    * @namespace Medhis.
+    */
+    window.Medhis = window.Medhis || {};
+    window.Medhis.institucionFormInstance = null;
+
+    /**
+        * `institucion-form` Formulario para la creación o edición de instituciones.
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class InstitucionForm extends Medhis.CRUFormMixin(Polymer.Element) {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'institucion-form';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    * {
+                        box-sizing: border-box;
+                    }
+
+                    paper-dialog {
+                        width: 70%;
+                    }
+
+                    form {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        grid-gap: 10px;
+                        align-items: flex-end;
+                    }
+                </style>
+
+                <graphql-query result="{{formData}}" defer>
+                    query institucionFormData { 
+                        poblados { 
+                            results { 
+                                id 
+                                nombre @title_case 
+                            } 
+                        } 
+                        tiposDocumento: __type(name: "InstitucionTipoDocumentoEnum") { 
+                            enumValues { 
+                                name
+                                description 
+                            } 
+                        }
+                    }
+                </graphql-query>
+
+                <graphql-query id="datos-objeto-query" hold>
+                    query datosInstitucion ($id: ID!) { 
+                        institucion(id: $id) { 
+                            id 
+                            nombre @title_case 
+                            codigo 
+                            telefono 
+                            direccion 
+                            razonSocial @title_case 
+                            identificacion 
+                            tipoDocumento 
+                            ciudad { id }
+                        }
+                    }
+                </graphql-query>
+
+                <paper-dialog modal opened="{{opened}}">
+                    <h2>Institución</h2>
+                    <paper-dialog-scrollable>
+                        <iron-form id="form">
+                            <form>
+                                <paper-input label="Nombre*" required auto-validate value="{{value.nombre}}"></paper-input>
+                                <paper-input label="Razón social*" required auto-validate value="{{value.razonSocial}}"></paper-input>
+                                <vaadin-combo-box label="Tipo de documento" required auto-validate value="{{value.tipoDocumento}}"
+                                    items="[[formData.tiposDocumento.enumValues]]" item-label-path="description" item-value-path="name">
+                                </vaadin-combo-box>
+                                <paper-input label="Número de documento*" required auto-validate value="{{value.identificacion}}"></paper-input>
+                                <paper-input label="Código" auto-validate value="{{value.codigo}}"></paper-input>
+                                <paper-input label="Dirección*" required auto-validate value="{{value.direccion}}"></paper-input>
+                                <paper-input label="Teléfono" auto-validate type="number" value="{{value.telefono}}"></paper-input>
+                                <vaadin-combo-box label="Ciudad" required auto-validate value="{{value.ciudad}}"
+                                    items="[[formData.poblados.results]]" item-label-path="nombre" item-value-path="id">
+                                </vaadin-combo-box>
+                            </form>
+                        </iron-form>
+                    </paper-dialog-scrollable>
+                    <div class="buttons">
+                        <paper-button dialog-dismiss>Cancelar</paper-button>
+                        <paper-button on-tap="save">[[accion]]</paper-button>
+                    </div>
+                </paper-dialog>
+            `;
+        }
+
+        /**
+            * Array of strings describing multi-property observer methods and their
+            * dependant properties
+            */
+        static get observers() {
+            return [
+                '_cleanEmptyNumber(value.telefono)',
+            ];
+        }
+
+        /**
+            * Instance of the element is created/upgraded. Useful for initializing
+            * state, set up event listeners, create shadow dom.
+            * @constructor
+            */
+        constructor() {
+            super();
+            if (!window.Medhis.institucionFormInstance) window.Medhis.institucionFormInstance = this;
+            this.createdResultName = 'crearInstitucion';
+            this.editedResultName = 'editarInstitucion';
+            this.objectResultName = 'institucion';
+        }
+
+        /**
+            * Use for one-time configuration of your component after local DOM is initialized.
+            */
+        ready() {
+            super.ready();
+
+            Polymer.RenderStatus.afterNextRender(this, () => {
+                this.client = this.shadowRoot.querySelector('graphql-query')._getClient();
+            });
+        }
+
+        /**
+            * Observer method que limpia campos numericos en formulario. Cuando se encuentran vaciós los coloca como null.
+            */
+        _cleanEmptyNumber(telefono) {
+            if (telefono === '') this.value.telefono = null;
+        }
+
+        /**
+            * LLena el formulario con los datos obtenidos.
+            */
+        _fillFormulario(data) {
+            this.value = {
+                nombre: data.nombre,
+                codigo: data.codigo,
+                telefono: data.telefono,
+                direccion: data.direccion,
+                razonSocial: data.razonSocial,
+                identificacion: data.identificacion,
+                tipoDocumento: data.tipoDocumento,
+                ciudad: data.ciudad.id,
+            };
+        }
+
+        /**
+            * @override
+            */
+        _createOptions(value) {
+            const createMutation = Apollo.gql`mutation crearInstitucion($institucion: InstitucionCreateGenericType!) {
+                crearInstitucion(input: $institucion) {
+                    ok
+                    errors { field, messages }
+                }
+            }`;
+
+            return {
+                mutation: createMutation,
+                variables: { institucion: Object.assign({}, value) },
+                refetchQueries: ['todasInstituciones'],
+            };
+        }
+
+        /**
+            * @override
+            */
+        _editOptions(id, value) {
+            const editMutation = Apollo.gql`mutation editarInstitucion($institucion: InstitucionUpdateGenericType!) {
+                editarInstitucion(input: $institucion) {
+                    ok
+                    errors { field, messages }
+                    institucion {
+                        id 
+                        nombre @title_case 
+                        codigo 
+                        telefono 
+                        direccion 
+                        razonSocial 
+                        identificacion 
+                        tipoDocumento 
+                        tipoDocumentoDisplay
+                        ciudad { id, nombre }
+                    }
+                }
+            }`;
+
+            return {
+                mutation: editMutation,
+                variables: { institucion: Object.assign({}, value, { id }) },
+            };
+        }
+    }
+
+    window.customElements.define(InstitucionForm.is, InstitucionForm);
+</script>

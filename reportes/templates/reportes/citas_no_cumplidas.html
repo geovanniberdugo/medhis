@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Citas no cumplidas{% endblock title %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Citas no cumplidas" %}</h1>
+</header>
+
+<mh-citas-no-cumplidas></mh-citas-no-cumplidas>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-citas-no-cumplidas.js' %}"></script>
+{% endblock js %}

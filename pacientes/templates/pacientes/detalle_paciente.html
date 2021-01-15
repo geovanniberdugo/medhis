@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load i18n static l10n %}
+
+{% block title %}Detalle paciente{% endblock title %}
+
+{% block content %}
+<mh-detalle-paciente pacienteid="{{ paciente.id|unlocalize }}" {% if orden_url %}ordenurl="{{ orden_url }}"{% endif %}></mh-detalle-paciente>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-detalle-paciente.js' %}"></script>
+{% endblock js %}

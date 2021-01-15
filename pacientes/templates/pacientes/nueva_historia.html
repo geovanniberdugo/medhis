@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load static i18n l10n %}
+
+{% block imports %}
+<link rel="import" href="{% static 'pages/medhis-historia-nueva.html' %}"> 
+{% endblock imports %} 
+
+{% block content %}
+<header class="header-title">
+    <h1>{{ formato.nombre }}</h1>
+</header>
+
+<medhis-historia-nueva sesion-id="{{ sesion.id|unlocalize }}" formato-id="{{ formato.id|unlocalize }}" 
+    tratamiento-id="{{ sesion.servicio_prestado_id|unlocalize }}"
+    data-adjuntos-url="{% url 'historias:new-encounter-adjuntos' sesion.id formato.id %}">
+</medhis-historia-nueva>
+{% endblock content %}

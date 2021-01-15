@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block imports %}
+<link rel="import" href="{% static 'pages/medhis-empleados.html' %}">
+{% endblock imports %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Usuarios administrativos" %}</h1>
+</header>
+
+<medhis-empleados></medhis-empleados>
+{% endblock content %}
+
+{% block dialogs %}
+<empleado-form></empleado-form>
+{% endblock dialogs %}

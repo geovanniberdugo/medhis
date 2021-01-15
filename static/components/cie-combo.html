@@ -1,0 +1,126 @@
+<link rel="import" href="../bower_components/vaadin-combo-box/theme/material/vaadin-combo-box.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<script>
+    /**
+        * `cie-combo` Combo-box para los codigos cie 10 de los rips.
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class CieCombo extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'cie-combo';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Termino de busqueda
+                    */
+                _searchTerm: {
+                    type: Object,
+                    value: () => { },
+                },
+
+                /**
+                    * Label del campo
+                    */
+                label: {
+                    type: String,
+                    value: '',
+                },
+
+                /**
+                    * Indica si el combo es requerido
+                    */
+                required: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                /**
+                    * Indica si el combo se muestra
+                    */
+                hidden: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                value: {
+                    type: String,
+                    notify: true,
+                },
+
+                /**
+                    * Item seleccionado
+                    */
+                selectedItem: {
+                    type: Object,
+                    notify: true,
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    vaadin-combo-box {
+                        width: 100%;
+                    }
+                </style>
+
+                <graphql-query result="{{result}}" variables="[[_searchTerm]]" defer>
+                    query todosCodigosCie($term: String!) {
+                        codigosCie(search: $term) {
+                            results {
+                                id
+                                codigo
+                                nombre
+                            }
+                        }
+                    }
+                </graphql-query>
+
+                <vaadin-combo-box label="[[label]]" required="[[required]]" hidden="[[hidden]]" item-label-path="nombre"
+                    item-value-path="id" on-filter-changed="_searchCie" filtered-items="[[result.codigosCie.results]]" 
+                    value="{{value}}" selected-item="{{selectedItem}}">
+                    <template>[[item.codigo]] - [[item.nombre]]</template>
+                </vaadin-combo-box>
+                    `;
+        }
+
+        /**
+            * Busqueda para el CIE
+        */
+        _searchCie(e) {
+            const term = e.detail.value;
+            this._debouncer = Polymer.Debouncer.debounce(
+                this._debouncer,
+                Polymer.Async.timeOut.after(500),
+                () => { this._searchTerm = term ? { term } : {}; },
+            );
+        }
+
+        /**
+            * Valida el campo
+            */
+        validate() {
+            return this.shadowRoot.querySelector('vaadin-combo-box').validate();
+        }
+    }
+
+    window.customElements.define(CieCombo.is, CieCombo);
+</script>

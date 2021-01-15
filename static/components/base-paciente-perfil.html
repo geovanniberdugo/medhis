@@ -1,0 +1,190 @@
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/iron-media-query/iron-media-query.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-item/paper-icon-item.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="paciente-info2.html">
+<link rel="import" href="../my-icons.html">
+
+<script>
+    /**
+        * `base-paciente-perfil` Componente base para la página de un paciente
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class BasePacientePerfil extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'base-paciente-perfil';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Indica si el menu se encuentra abierto
+                    */
+                openedMenu: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                /**
+                    * Menu seleccionado
+                    */
+                selectedMenu: {
+                    type: String,
+                    value: '',
+                },
+
+                /**
+                    * Datos del paciente
+                    */
+                paciente: {
+                    type: Object,
+                    value: () => ({}),
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                        --paper-listbox-background-color: transparent;
+                    }
+
+                    .container {
+                        display: grid;
+                        grid-gap: 10px;
+                        grid-template-columns: 1fr;
+                    }
+
+                    nav {
+                        top: 0;
+                        bottom: 0;
+                        z-index: 1;
+                        width: 256px;
+                        right: -300px;
+                        position: absolute;
+                        background-color: white;
+                        transition: transform .3s ease-in-out;
+                    }
+
+                    nav[opened] {
+                        transform: translateX(-300px);
+                    }
+
+                    #menu {
+                        right: 0;
+                        top: 50%;
+                        z-index: 1;
+                        position: fixed;
+                        background-color: white;
+                    }
+
+                    #scrim {
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        opacity: 0;
+                        position: absolute;
+                        transition-property: opacity;
+                        /* -webkit-transform: translateZ(0); */
+                        /* transform:  translateZ(0); */
+                        background: rgba(0, 0, 0, 0.5);
+                    }
+
+                    #scrim[opened] {
+                        opacity: 1;
+                        z-index: 1;
+                    }
+
+                    @media (min-width: 600px) {
+                        .container {
+                            display: grid;
+                            grid-template-columns: 1fr auto;
+                            grid-template-rows: auto 1fr;
+                            grid-gap: 10px;
+
+                            grid-template-areas:
+                                "main paciente"
+                                "main nav"
+                        }
+
+                        paciente-info {
+                            grid-area: paciente;
+                        }
+
+                        nav {
+                            width: auto;
+                            grid-area: nav;
+                            position: static;
+                            background: transparent;
+                        }
+                        
+                        section {
+                            grid-area: main;
+                        }
+
+                        #menu {
+                            display: none;
+                        }
+
+                        #menu-close {
+                            display: none;
+                        }
+                    }
+                </style>
+
+                <iron-media-query query="(min-width: 600px)" query-matches="{{large}}"></iron-media-query>
+                <div id="scrim" opened$="[[openedMenu]]"></div>
+                <paper-icon-button id="menu" on-click="_openMenu" icon="my-icons:arrow-back" hidden$="[[openedMenu]]"></paper-icon-button>
+                <div class="container">
+                    <paciente-info mini$="[[!large]]" paciente="[[paciente]]"></paciente-info>
+                    <nav opened$="[[openedMenu]]">
+                        <paper-icon-button id="menu-close" icon="my-icons:close" on-click="_closeMenu"></paper-icon-button>
+                        <paper-listbox attr-for-selected="name" selected="{{selectedMenu}}">
+                            <!------<a href="/pacientes/[[paciente.id]]/citas/" tabindex="-1">
+                                <paper-icon-item name="citas">
+                                    <iron-icon icon="my-icons:view-list"></iron-icon> Citas
+                                </paper-icon-item>
+                            </a>----->
+                            <paper-icon-item name="ordenes">
+                                <iron-icon icon="my-icons:view-list"></iron-icon> ordenes
+                            </paper-icon-item>
+                        </paper-listbox>
+                    </nav>
+                    <section>
+                        <slot></slot>
+                    </section>
+                </div>
+            `;
+        }
+
+        /**
+            * Muestra el menu.
+            */
+        _openMenu() {
+            this.openedMenu = true;
+        }
+
+        /**
+            * Oculta el menu.
+            */
+        _closeMenu() {
+            this.openedMenu = false;
+        }
+    }
+
+    window.customElements.define(BasePacientePerfil.is, BasePacientePerfil);
+</script>

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block imports %}
+<link rel="import" href="{% static 'pages/medhis-citas-paciente.html' %}">
+{% endblock imports %}
+
+{% block content %}
+<medhis-citas-paciente paciente-id="{{ paciente.id }}"></medhis-citas-paciente>
+{% endblock content %}

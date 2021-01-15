@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Medicos ordenan tratamiento{% endblock title %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Medicos que ordenan tratamiento" %}</h1>
+</header>
+
+<mh-medicos-ordenan-tratamiento></mh-medicos-ordenan-tratamiento>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-medicos-ordenan-tratamiento.js' %}"></script>
+{% endblock js %}

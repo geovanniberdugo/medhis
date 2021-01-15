@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load static i18n l10n %}
+
+{% block imports %}
+<link rel="import" href="{% static 'pages/medhis-historias-sesion.html' %}">
+{% endblock imports %}
+
+{% block content %}
+    <header class="header-title">
+        <h1>{% trans "visita" %}</h1>
+    </header>
+
+    <medhis-historias-sesion sesion-id="{{ cita.pk|unlocalize }}" data-agenda-url="{% url 'agenda:listar' %}"
+        data-encuentro-url="{% url 'pacientes:nueva-historia' cita.pk 0 %}">
+    </medhis-historias-sesion>
+{% endblock content %}

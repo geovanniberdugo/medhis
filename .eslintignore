@@ -1,0 +1,4 @@
+/static/node_modules/*
+/static/bower_components/*
+/static/js/*
+/static/build/*

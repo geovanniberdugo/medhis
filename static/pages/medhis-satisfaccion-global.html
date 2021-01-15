@@ -1,0 +1,82 @@
+<link rel="import" href="../bower_components/vaadin-combo-box/theme/material/vaadin-combo-box.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+
+<script>
+    /**
+     * `medhis-satisfaccion-global` Pagina para ingresar a encuesta de satisfaccion global
+     *
+     * @customElement
+     * @polymer
+     * @extends {Polymer.Element}
+     */
+    class MedhisSatisfaccionGlobal extends Polymer.Element {
+        /**
+         * String providing the tag name to register the element under.
+         */
+        static get is() {
+            return 'medhis-satisfaccion-global';
+        }
+
+        /**
+         * Object describing property-related metadata used by Polymer features
+         */
+        static get properties() {
+            return {
+                
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    paper-card {
+                        width: 100%;
+                    }
+
+                </style>
+
+                <paper-card>
+                    <div class="card-content">
+                        <vaadin-combo-box label="Paciente" name='paciente' style="width: 100%;"></vaadin-combo-box>
+                    </div>
+                    <div class="card-content">
+                        <vaadin-combo-box label="¿Cómo calificaría su experiencia global respecto a los servicios de salud que ha
+                        recibido a través de su IPS?" name='pregunta1' style="width: 100%;"></vaadin-combo-box>
+                    </div>
+                    <div class="card-content">
+                        <vaadin-combo-box label="¿Recomendaría a sus familiares y amigos esta IPS?" name='pregunta2' 
+                        style="width: 100%;"></vaadin-combo-box>
+                    </div>
+                </paper-card>
+            `;
+        }
+
+        /**
+         * Instance of the element is created/upgraded. Use: initializing state,
+         * set up event listeners, create shadow dom.
+         * @constructor
+         */
+        constructor() {
+            super();
+        }
+
+        /**
+         * Use for one-time configuration of your component after local DOM is initialized. 
+         */
+        ready() {
+            super.ready();
+
+            Polymer.RenderStatus.afterNextRender(this, function() {
+                
+            });
+        }
+
+    }
+
+    window.customElements.define(MedhisSatisfaccionGlobal.is, MedhisSatisfaccionGlobal);
+</script>

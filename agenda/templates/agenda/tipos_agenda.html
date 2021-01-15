@@ -1,0 +1,91 @@
+{% extends "base.html" %} 
+{% load i18n %}
+
+{% block imports %}
+<link rel="import" href="/static/bower_components/vaadin-material-theme/vaadin-grid-sorter.html">
+<link rel="import" href="/static/bower_components/vaadin-material-theme/vaadin-grid.html">
+<link rel="import" href="/static/bower_components/polymer/lib/elements/dom-bind.html">
+<link rel="import" href="/static/bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="/static/bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="/static/components/tipo-agenda-form.html"> 
+{% endblock imports %}
+
+{% block css %}
+<style>
+    paper-fab {
+        position: absolute;
+        right: 30px;
+        bottom: calc(100vh - 530px);
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+    <header class="header-title">
+        <h1>{% trans "tipos de agenda" %}</h1>
+    </header>
+
+    <dom-bind>
+        <template>
+            {% verbatim %}
+            <graphql-query result="{{result}}">
+                query todosTiposAgenda { 
+                    tiposAgenda { 
+                        results { 
+                            id 
+                            nombre @title_case
+                            duracion
+                        }
+                    }
+                }
+            </graphql-query>
+            {% endverbatim %}
+
+            <vaadin-grid id="table" items="[[result.tiposAgenda.results]]" on-active-item-changed="edit">
+                <vaadin-grid-column flex-grow="2">
+                    <template class="header">
+                        <vaadin-grid-sorter path="nombre" direction="asc">
+                            {% trans 'Nombre' %}
+                        </vaadin-grid-sorter>
+                    </template>
+                    <template>
+                        [[item.nombre]]
+                    </template>
+                </vaadin-grid-column>
+                <vaadin-grid-column>
+                    <template class="header">{% trans 'Duración' %}</template>
+                    <template>
+                        [[item.duracion]]
+                    </template>
+                </vaadin-grid-column>
+            </vaadin-grid>
+            <paper-fab icon="my-icons:add" elevation="3" on-tap="create"></paper-fab>
+        </template>
+    </dom-bind>
+{% endblock content %}
+
+{% block dialogs %}
+<tipo-agenda-form></tipo-agenda-form>
+{% endblock dialogs %}
+
+{% block js %}
+<script>
+    (function () {
+        const domBind = document.querySelector('dom-bind');
+        const form = document.querySelector('tipo-agenda-form');
+
+        domBind.create = () => {
+            form.id = null;
+            form.opened = true;
+        }
+
+        domBind.edit = (e) => {
+            if (e.detail.value) {
+                form.id = e.detail.value.id;
+                domBind.$.table.activeItem = null;
+                form.opened = true;
+            }
+        };
+    })();
+</script> 
+{% endblock js %}

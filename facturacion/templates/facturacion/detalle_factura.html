@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% load l10n static common_tags %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+<style>
+    p {
+        margin: 5px 0;
+    }
+
+    section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    section :first-child {
+        align-self: end;
+    }
+
+    section :last-child {
+        align-self: end;
+        justify-self: center;
+    }
+
+    table {
+        border-spacing: 0;
+        border-collapse: collapse;
+    }
+
+    th {
+        padding: 0 20px;
+        text-align: left;
+    }
+
+    td {
+        padding: 0;
+    }
+
+    .info {
+        display: grid;
+        border: 1px solid;
+        grid-template-columns: 2fr 1fr 1fr;
+    }
+
+    .relacion table {
+        font-size: 12px;
+        text-align: center;
+    }
+
+    .relacion caption {
+        padding: 10px;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .relacion th {
+        padding: 10px;
+        text-align: center;
+    }
+
+    .logo-history {
+        display: grid;
+        text-align: center;
+        grid-template-columns: 1fr 1fr 1fr; /* 3 cols */ 
+    }
+
+    @page {
+        margin: 3mm;
+    }
+
+    @media print{
+        .fact {
+            margin: 40mm 5mm 0 5mm  !important
+        }
+
+        .relacion {
+            margin-top: 5mm;
+        }
+
+        .relacion table {
+            font-size: 10px;
+        }
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="print-card fact">
+    <div class="info">
+        <div>
+            {% if factura.cliente.factura_paciente %}
+            <p><strong>Cliente:</strong> {{ factura.paciente|title }}</p>
+            <p><strong>Dirección:</strong> {{ factura.paciente.direccion }}</p>
+            {% else %}
+            <p><strong>Cliente:</strong> {{ factura.cliente.nombre|title }}</p>
+            <p><strong>Dirección:</strong> {{ factura.cliente.direccion }}</p>
+            {% endif %}
+        </div>
+        <div>
+            {% if factura.cliente.factura_paciente %}
+            <p><strong>{{ factura.paciente.tipo_documento}}:</strong> {{ factura.paciente.numero_documento }}</p>
+            <p><strong>Telefono:</strong> {% firstof factura.paciente.telefono|unlocalize factura.paciente.celular|unlocalize %}</p>
+            {% else %}
+            <p><strong>Nit:</strong> {{ factura.cliente.nit }}</p>
+            <p><strong>Telefono:</strong> {{ factura.cliente.telefono|unlocalize }}</p>
+            {% endif %}
+        </div>
+        <div>
+            <p><strong>Factura No:</strong> {{ factura.numero|unlocalize }}</p>
+            <p><strong>Fecha:</strong> {{ factura.fecha_expedicion|date:"SHORT_DATE_FORMAT" }}</p>
+        </div>
+    </div>
+    <br>
+    <p><b>CONCEPTO:</b> <br>SERVICIOS PRESTADOS SEGUN RELACION DE PACIENTES ADJUNTA</p>
+    <br>
+    <section>
+        <div></div>
+        <div>
+            <table>
+                <tbody>
+                    <tr>
+                        <th>Subtotal:</th>
+                        <td>{{ factura.subtotal|floatformat }}</td>
+                    </tr>
+                    <tr>
+                        <th>Coopago:</th>
+                        <td>{{ factura.total_coopago|floatformat }}</td>
+                    </tr>
+                    {% if factura.cliente.discriminar_iva %}
+                    <tr>
+                        <th>Coopago Bruto:</th>
+                        <td>{{ factura.total_coopago_bruto|floatformat }}</td>
+                    </tr>
+                    <tr>
+                        <th>Iva Coopago:</th>
+                        <td>{{ factura.total_iva_coopago|floatformat }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <th>Total:</th>
+                        <td>{{ factura.total|floatformat }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <br>
+    <p>SON: {{ factura.total|to_words|upper }} M/L ***************************</p>
+    {% if factura.observaciones %}
+    <br>
+    <p><strong>Observaciones:</strong> {{ factura.observaciones }}</p>
+    {% endif %}
+    <br><br>
+    <div>
+        <div>
+            {% if quien_firma.firma %}<img width="120px" src="{{ quien_firma.firma.url }}" alt="firma represenante legal"> <br>{% endif %}
+            {{ quien_firma|upper }} <br>
+            {{ factura.institucion.footer_factura|upper }}
+        </div>
+    </div>
+</div>
+<br>
+<div class="print-card relacion">
+    <div class="logo-history">
+        {% with institucion=factura.institucion %}
+        <div>
+            {% if institucion.logo %}
+            <img src={{ institucion.logo.url }} alt="Logo institucion" width="80" height="30">
+            {% endif %}
+        </div>
+        <div class="logo-text">
+            <strong class="big-text">{{ institucion.razon_social }}</strong><br>
+            <strong class="big-text">{{ institucion.get_tipo_documento_display }} {{ institucion.identificacion }}</strong><br>
+            <strong class="small-text">{{ institucion.direccion }}</strong><br>
+            <strong class="small-text">{% firstof institucion.telefono "" %}</strong>
+        </div>
+        {% endwith %}
+    </div>
+    <hr>
+    <table>
+        <caption>RELACION DE PACIENTES FACTURA No. {{ factura.numero|unlocalize }}</caption>
+        <thead>
+            <tr>
+                <th>Identificación</th>
+                <th>Paciente</th>
+                <th>Fecha</th>
+                <th>Servicio</th>
+                <th>No. Autorización</th>
+                <th>DX</th>
+                <th>Cant.</th>
+                <th>V. Unitario</th>
+                <th>Coopago</th>
+                {% if factura.cliente.discriminar_iva %}
+                <th>Coopago Bruto</th>
+                <th>Iva Coopago</th>
+                {% endif %}
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for registro in detalle %}
+            <tr>
+                <td>{{ registro.paciente.tipo_documento }} {{ registro.paciente.numero_documento }}</td>
+                <td>{{ registro.paciente|title }}</td>
+                <td>{{ registro.fecha_atencion|date:"j/m/Y" }}</td>
+                <td>{{ registro.servicio.cups }} - {{ registro.servicio|title }}</td>
+                <td>{{ registro.autorizacion }}</td>
+                <td>{{ registro.cie }}</td>
+                <td>{{ registro.cantidad }}</td>
+                <td>{{ registro.valor|floatformat }}</td>
+                <td>{{ registro.coopago|floatformat }}</td>
+                {% if factura.cliente.discriminar_iva %}
+                <td>{{ registro.coopago_bruto|floatformat }}</td>
+                <td>{{ registro.iva_coopago|floatformat }}</td>
+                {% endif %}
+                <td>{{ registro.subtotal|floatformat }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock content %}
+
+{% block dialogs %}
+<paper-fab-speed-dial class="hidden-print" icon="my-icons:print" with-backdrop>
+    <paper-fab-speed-dial-action icon="my-icons:receipt" onclick="printFactura(event);">Factura</paper-fab-speed-dial-action>
+    <paper-fab-speed-dial-action icon="my-icons:menu" onclick="printDetalle(event);">Detalle</paper-fab-speed-dial-action>
+</paper-fab-speed-dial>
+{% endblock dialogs %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-print-factura.js' %}"></script>
+<script>
+    printFactura = (e) => {
+        document.querySelector('.relacion').classList.add('hidden-print');
+        e.target.parentElement.close();
+        window.print();
+    }
+
+    printDetalle = (e) => {
+        document.querySelector('.fact').classList.add('hidden-print');
+        e.target.parentElement.close();
+        window.print();
+    }
+
+    window.onafterprint = () => {
+        [...document.querySelectorAll('.print-card')].forEach(card => card.classList.remove('hidden-print'));
+    }
+
+    const mediaQueryList = window.matchMedia('print');
+    mediaQueryList.addListener((mql) => {
+        if (mql.matches) {
+            document.querySelector('app-header-layout')._updateLayoutStates();
+        }
+    });
+</script>
+{% endblock js %}

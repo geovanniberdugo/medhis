@@ -1,0 +1,361 @@
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-if.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="historia-clinica-canvas-field.html">
+<link rel="import" href="historia-clinica-table-field.html">
+<link rel="import" href="historia-clinica-field.html">
+
+<script>
+    class HistoriaClinicaContent extends Polymer.Element {
+        static get is() { return 'historia-clinica-content'; }
+
+        static get properties() {
+            return {
+                /** Nombre del tab. */
+                key: String,
+
+                /** Valores calculados dinamicamente. */
+                calculations: Object,
+
+                /** Campos */
+                fields: {
+                    type: Object,
+                },
+
+                /** Indica si el tab es invalido. */
+                invalid: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                /** Datos de la historia. */
+                data: {
+                    type: Object,
+                    notify: true,
+                    value() { return {}; },
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+                </style>
+
+                <div class="content">
+                    <template is="dom-repeat" items="{{fields.order}}" as="field">
+                        <template is="dom-if" if="[[_isNormalField(field)]]">
+                            <historia-clinica-field field=[[_getField(field)]] data="{{data}}" key="[[field]]"></historia-clinica-field>
+                        </template>
+                        <template is="dom-if" if="[[_isTableField(field)]]">
+                            <historia-clinica-table-field field=[[_getField(field)]] data="[[_getDataForTableField(field)]]"></historia-clinica-table-field>            
+                        </template>
+                        <template is="dom-if" if="[[_isCanvasField(field)]]">
+                            <historia-clinica-canvas-field field=[[_getField(field)]] data="{{data}}" key="[[field]]"></historia-clinica-canvas-field>            
+                        </template>
+                    </template>
+                </div>
+            `;
+        }
+
+        /**
+            * Instance of the element is created/upgraded. Useful for initializing
+            * state, set up event listeners, create shadow dom.
+            * @constructor
+            */
+        constructor() {
+            super();
+            this.observedFields = {};
+        }
+
+        /**
+            * Use for one-time configuration of your component after local DOM is
+            * initialized.
+            */
+        ready() {
+            super.ready();
+
+            // When possible, use afterNextRender to defer non-critical
+            // work until after first paint.
+            Polymer.RenderStatus.afterNextRender(this, function() {
+                if (Object.keys(this.calculations).length > 0) {
+                    this.observedFields = this._getObservedFields(this.calculations);
+                    this._createMethodObserver('_calculatedFieldsObserver(data.*)');
+                }
+            });
+        
+        }
+
+        /**
+            * Obtiene la funcion y los paramatros a usar para calcular el campo.
+            *
+            * @param {string} definition Definicion de la funcion a usar.
+            * @return {object} Nombre de la funcion y paramatros.
+            */
+        _getCalculateFunctionData(definition) {
+            const re = /(?<function>\w+)\((?<parameters>.*)\)/u;
+            const result = definition.match(re);
+
+            return { functionName: result.groups.function, parameters: result.groups.parameters.split(', ') };
+        }
+
+        /**
+            * Obtiene la funcion a usar para calcular un campo.
+            *
+            * @param {string} field Nombre del campo calculado en data.
+            * @param {string} func Nombre de la función a usar para el calculo.
+            * @param {array} params Lista con los nombres de los parametros que requiere la funcion para el calculo.
+            *
+            * @return {function} Funcion a usar para el calculo
+            */
+        _calculateField(field, func, params) {
+            const _func = this[func]
+            return data => {
+                const funcParams = params.map(p => data[p]);
+                this.data = {...this.data, [field]: _func(...funcParams)};
+            }
+        }
+
+        /**
+            * Obtiene los campos de dato que deben ser observados para calcular los campos dinamicos.
+            */
+        _getObservedFields(calculations) {
+            return Object.assign({}, ...Object.keys(calculations).map(calculatedField => {
+                const functionData = this._getCalculateFunctionData(calculations[calculatedField].function);
+                const func = functionData.functionName;
+                const params = functionData.parameters;
+                
+                return Object.assign({}, ...params.map(param => (
+                    { [`data.${param}`]: this._calculateField(calculatedField, func, params) }
+                )));
+            }));
+        }
+
+        /**
+            * Observer que calcula los campos dinamicos.
+            */
+        _calculatedFieldsObserver(change) {
+            const path = change.path;
+            const data = change.base;
+
+            if (path in this.observedFields) {
+                this.observedFields[path](data);
+                this.dispatchEvent(new CustomEvent('field-calculated', {
+                    detail: {
+                        key: this.key,
+                        data: this.data,
+                    }
+                }));
+            }
+        }
+
+        /**
+            * Indica si el campo es una tabla.
+            * @param {string} key Llave del campo en fields.
+            * @return {boolean}
+            */
+        _isTableField(key) {
+            return this.fields[key].tipo === 'table';
+        }
+
+        /**
+            * Indica si el campo es un canvas.
+            * @param {string} key Llave del campo en fields.
+            * @return {boolean}
+            */
+        _isCanvasField(key) {
+            return this.fields[key].tipo === 'canvas';
+        }
+
+        /**
+            * Indica si el campo es de texto.
+            * @param {string} key Llave del campo en fields.
+            * @return {boolean}
+            */
+        _isNormalField(key) {
+            return !(this._isCanvasField(key) || this._isTableField(key));
+        }
+
+        /**
+            * Devuelve el campo del schema.
+            * @param {string} key Llave del campo en fields.
+            * @return {object}
+            */
+        _getField(key) {
+            return this.fields[key];
+        }
+
+        /**
+            * Obtiene los datos del tab basado en el key.
+            * @param {string} key
+            * @return {Array}
+            */
+        _getDataForTableField(key) {
+            if (!(key in this.data)) {
+                this.data[key] = [];
+            }
+
+            return this.data[key];
+        }
+
+        /**
+            * Calcula el indice de masa corporal.
+            *
+            * @param {Number} peso Peso en kg.
+            * @param {Number} estatura Estatura en Cm.
+            */
+        calculateIMC(peso, estatura) {
+            return (peso && estatura) ? Number((peso / ((estatura / 100) ** 2)).toFixed(2)) : '';
+        }
+
+        calculatePlanUmri(plan) {
+            const planes = {
+                2: `Ultrasonido en aceite por 10 minutos a región de cadera        la razón de 1.2 WATT/cm2
+Medios físicos por 20 minutos a cadera
+Isométricos de cintura pélvica
+Estiramientos isquiotibiales, tensor de fascia lata, flexores de cadera
+Ejercicios de plan casero
+Control medico especialista. Traer informe de terapia física.`,
+                3: `Baños  contraste por 20 minutos a región cervical y escapular
+Isométricos de cintura escapular y miembros superiores
+Higiene de columna  
+Ejercicios de plan caseros.
+Fortalecer erectores de columna dorsal
+Traccion cervical iniciar Neutro, intermitente, con 10 lb por 10 min, interdiario, progresar.
+Relajación de trapecio  superior y medio izquierdo
+US en aceite por 10 dichas regiones
+Control medico especialista. Traer informe de terapia física.`,
+                4: `Baños  contraste por 20 minutos a región escapular y hombro BIL
+Ultrasonido en Aceite a dosis de 1.5 watt por cm2 a nivel supraespinoso BIL
+ejercicios de movilización libres en hombro BIL
+Isométricos de cintura escapular, rotadores externos y ABD de hombro BIL.
+Higiene de columna  
+Ejercicios de fortalecimiento de erectores de columna dorsal.
+Control medico especialista. Traer informe de terapia física`,
+                5: `Isométricos de abdominales , paraespinales altos, glúteo mayor y medio.
+Estiramientos de flexores de cadera y rodilla bilateral
+Higiene de columna  
+Fortalecer erectores de columna
+Medios físicos por 15 min a región lumbar .
+Caminador por 10 min en plano.
+ 
+Control medico especialista. Traer informe de terapia física.`,
+                6: `Ultrasonido en aceite por 10 minutos a región de muñeca BIL a la razón de 1.2 WATT/cm2                      
+Medios físicos por 15 minutos a MUNECA BIL
+Ejercicios de plan casero
+AGARRES BASICOS EN MANO
+EJERCICIOS DESLIZAMIENTO MEDIANO BIL
+ 
+Control medico especialista. Traer informe de terapia física.`,
+                7: `Medios físicos a rodilla bil
+Fortalecer vasto medial bilateral últimos grados de extensión
+Propicepcion en MMII
+Plan casero
+Control medico especialista. Traer informe de terapia física.`,
+                8: `Baños  contraste por 20 minutos a tobillo
+Isométricos de intrínsecos pie bilateral              
+Ejercicios de propiocepción en miembros inferiores
+US en aceite por 10 min a fascia plantar derecha
+Estirar fascia plantar bilateral
+Plan casero
+Control medico especialista. Traer informe de terapia física.`,
+                9: `Evaluar y entrenar ABC
+Actividades  UNI   U   BIMANUALES
+Entrenar motricidad  
+Plan casero:
+Control medico especialista. Traer informe de terapia ocupacional.`,
+                10: `PESO  ACTUAL:
+INICIAR CON 30% DEL PESO ACTUAL E INCREMENTO GRADUAL Y PROGRESIVO.
+APLICAR   EVALUACIONES  DE ESCALA DE EVA Y OWESTRY ANTES Y AL FINAL DEL TRATAMIENTO.
+FRECUENCIAS   DIARIAS    SECUENCIALES .
+Enviar informes de evaluación  final al medico especialista
+ 
+Control medico especialista.`,
+                11: `PESO  ACTUAL:
+INICIAR CON 30% DEL PESO ACTUAL E INCREMENTO GRADUAL Y PROGRESIVO.
+APLICAR   EVALUACIONES  DE ESCALA DE EVA Y OWESTRY ANTES Y AL FINAL DEL TRATAMIENTO.
+FRECUENCIAS   DIARIAS    SECUENCIALES .
+Enviar informes de evaluación  final al medico especialista
+ 
+Control medico especialista.`,
+                12: `PESO  ACTUAL:
+INICIAR CON 30% DEL PESO ACTUAL E INCREMENTO GRADUAL Y PROGRESIVO.
+APLICAR   EVALUACIONES  DE ESCALA DE EVA Y OWESTRY ANTES Y AL FINAL DEL TRATAMIENTO.
+FRECUENCIAS   DIARIAS    SECUENCIALES .
+Enviar informes de evaluación  final al medico especialista
+ 
+Control medico especialista.`,
+                13: `PESO  ACTUAL:
+INICIAR CON 30% DEL PESO ACTUAL E INCREMENTO GRADUAL Y PROGRESIVO.
+APLICAR   EVALUACIONES  DE ESCALA DE EVA Y OWESTRY ANTES Y AL FINAL DEL TRATAMIENTO.
+FRECUENCIAS   DIARIAS    SECUENCIALES .
+Enviar informes de evaluación  final al medico especialista
+ 
+Control medico especialista.`,
+                14: `Baños  contraste por HEMICARA     10 MIN
+MASAJE CENTRIFUGO A 5 MIN  A  HEMICARA       
+REEDUCAR MUSCULOS FACIALES HEMICARA      
+CORRIENTE GALVANICA A DICHOS MUSCULOS PUNTO M,OTOR
+PLAN CASERO
+
+I
+Control medico especialista. Traer informe de terapia física.`,
+                15: `Reeducar patrones de movimiento 
+Balance de tronco de pie
+técnicas  de facilitación 
+Reeducar marcha
+
+
+Plan casero`,
+                16: `Ultrasonido en aceite por 10 minutos a región de CODO BIL a la razón de 1.2 WATT/Cm2
+Medios físicos por 15 minutos a CODO BIL.
+Ejercicios de plan casero
+AGARRES BASICOS EN MANO
+EJERCICIOS DESLIZAMIENTO EXTENSORES CODO BIL
+ISOMETRICOS DE FLEXOPRONADORES ANTEBRAZO BIL.`,
+                17: `Baños  contraste por 20 minutos a pie
+Isométricos de intrínsecos pie bilateral              
+Ejercicios de propiocepción en miembros inferiores
+US en aceite por 10 min a fascia plantar derecha
+Estirar fascia plantar bilateral
+Plan casero
+Control medico especialista. Traer informe de terapia física.`,
+            };
+
+            return planes[plan];
+        }
+
+        validate() {
+            let valid = true;
+            const fields = this.shadowRoot.querySelectorAll('historia-clinica-field, historia-clinica-table-field');
+            for (let i = 0; i < fields.length; i++) {
+                if (!fields[i].validate()) {
+                    valid = false;
+                }
+            }
+
+            this.invalid = !valid;
+            this.dispatchEvent(new CustomEvent('validate-historia'));
+            return valid;
+        }
+
+        save() {
+            if (this.validate()) {
+                this.dispatchEvent(new CustomEvent('save-historia', {
+                    detail: { terminada: false }, bubbles: true, composed: true,
+                }));
+            } else {
+                this.dispatchEvent(new CustomEvent('notify-toast-form-error', {
+                    bubbles: true, composed: true, detail: {},
+                }));
+            }
+        }
+    }
+
+    window.customElements.define(HistoriaClinicaContent.is, HistoriaClinicaContent);
+</script>

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Indicadores mortalidad y morbilidad{% endblock title %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Indicadores de mortalidad, morbilidad y eventos adversos" %}</h1>
+</header>
+
+<mh-ind-mortalidad-morbilidad url="{% url 'reportes:ind-mortalidad-morbilidad-print' %}"></mh-ind-mortalidad-morbilidad>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-ind-mortalidad-morbilidad.js' %}"></script>
+{% endblock js %}

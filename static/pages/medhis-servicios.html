@@ -1,0 +1,119 @@
+<link rel="import" href="../bower_components/vaadin-grid/theme/material/vaadin-grid-sorter.html">
+<link rel="import" href="../bower_components/vaadin-grid/theme/material/vaadin-grid.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../components/servicio-form.html">
+
+<script>
+    /**
+     * `medhis-servicios` Página para listar los servicios que ofrece un cliente.
+     *
+     * @customElement
+     * @polymer
+     * @extends {Polymer.Element}
+     */
+    class MedhisServicios extends Polymer.Element {
+        /**
+         * String providing the tag name to register the element under.
+         */
+        static get is() {
+            return 'medhis-servicios';
+        }
+
+        /**
+         * Object describing property-related metadata used by Polymer features
+         */
+        static get properties() {
+            return {
+
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    paper-fab {
+                        position: absolute;
+                        right: 30px;
+                        bottom: calc(100vh - 530px);
+                    }
+                </style>
+
+                <graphql-query result="{{result}}">
+                    query todosServicios { 
+                        servicios { 
+                            results { 
+                                id
+                                cups @title_case
+                                codigo @uppercase
+                                nombre @title_case
+                                abreviatura @uppercase
+                                tipo { id, nombre @title_case }
+                            } 
+                        } 
+                    }
+                </graphql-query>
+
+                <vaadin-grid id="table" items="[[result.servicios.results]]" on-active-item-changed="edit">
+                    <vaadin-grid-column flex-grow="2">
+                        <template class="header">
+                            <vaadin-grid-sorter path="nombre" direction="asc">Nombre</vaadin-grid-sorter>
+                        </template>
+                        <template>[[item.nombre]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Código</template>
+                        <template>[[item.codigo]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Abreviatura</template>
+                        <template>[[item.abreviatura]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Cups</template>
+                        <template>[[item.cups]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Tipo</template>
+                        <template>[[item.tipo.nombre]]</template>
+                    </vaadin-grid-column>
+                </vaadin-grid>
+
+                <paper-fab icon="my-icons:add" elevation="3" on-tap="create"></paper-fab>
+            `;
+        }
+
+        /** Retorna el formulario. */
+        static _getForm() {
+            return Medhis.servicioFormInstance;
+        }
+
+        /**
+         * Muestra formulario para crear un plan.
+         */
+        create() {
+            const form = MedhisServicios._getForm();
+            form.id = null;
+            form.opened = true;
+        }
+
+        /**
+         * Muestra el formulario para editar el plan.
+         */
+        edit(e) {
+            if (e.detail.value) {
+                const form = MedhisServicios._getForm();
+                form.id = e.detail.value.id;
+                this.$.table.activeItem = null;
+                form.opened = true;
+            }
+        }
+    }
+
+    window.customElements.define(MedhisServicios.is, MedhisServicios);
+</script>

@@ -1,0 +1,182 @@
+<link rel="import" href="../../bower_components/vaadin-combo-box/theme/material/vaadin-combo-box.html">
+<link rel="import" href="../../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../../bower_components/polymer/lib/utils/debounce.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/utils/async.html">
+<link rel="import" href="../../components/cie-combo.html">
+
+<script>
+    /**
+     * `diagnostico-procedimiento` Formulario para ingresar diagnostico(RIPS) de procedimientos.
+     *
+     * @customElement
+     * @polymer
+     * @extends {Polymer.Element}
+     */
+    class DiagnosticoProcedimiento extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'diagnostico-procedimiento';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Lista de ambitos de realización del procedimiento
+                    */
+                ambitos: {
+                    type: Array,
+                    value: () => ([
+                        { value: '1', label: 'Ambulatorio' },
+                        { value: '2', label: 'Hospitalario' },
+                        { value: '3', label: 'En urgencias' },
+                    ]),
+                },
+
+                /**
+                    * Lista de finalidad
+                    */
+                finalidad: {
+                    type: Array,
+                    value: () => ([
+                        { value: '1', label: 'Diagnóstico' },
+                        { value: '2', label: 'Terapéutico' },
+                        { value: '3', label: 'Protección específica' },
+                        { value: '4', label: 'Detección temprana de enfermedad general' },
+                        { value: '5', label: 'Detección temprana de enfermedad profesional' },
+                    ]),
+                },
+
+                /**
+                    * Lista del personal que atiende
+                    */
+                personal: {
+                    type: Array,
+                    value: () => ([
+                        { value: '1', label: 'Médico (a) especialista' },
+                        { value: '2', label: 'Médico (a) general' },
+                        { value: '3', label: 'Enfermera (o)' },
+                        { value: '4', label: 'Auxiliar de enfermería' },
+                        { value: '5', label: 'Otro' },
+                    ]),
+                },
+
+                /**
+                    * Lista de formas de realización del acto quirurgico
+                    */
+                formas: {
+                    type: Array,
+                    value: () => ([
+                        { value: '1', label: 'Unico o unilateral' },
+                        { value: '2', label: 'Múltiple o bilateral, misma vía, diferente especialidad' },
+                        { value: '3', label: 'Múltiple o bilateral, misma vía, igual especialidad' },
+                        { value: '4', label: 'Múltiple o bilateral, diferente vía, diferente especialidad' },
+                        { value: '5', label: 'Múltiple o bilateral, diferente vía, igual especialidad' },
+                    ]),
+                },
+
+                /**
+                    * Datos del diagnotico
+                    */
+                data: {
+                    type: Object,
+                    notify: true,
+                    value: () => ({}),
+                },
+
+                /**
+                    * Parametros predefinidos
+                    */
+                _params: {
+                    type: Object,
+                    value: () => ({}),
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    vaadin-combo-box {
+                        display: block;
+                    }
+                </style>
+
+                <graphql-query defer on-result-changed="_parametrosData">
+                    query parametrosRipsConsulta {
+                        parametrosRips(tipo: "PR") {
+                            results { id, data }
+                        }
+                    }
+                </graphql-query>
+
+                <vaadin-combo-box label="Ambito de realización del procedimiento" items="[[ambitos]]"
+                    value="{{data.ambito}}" selected-item="{{data.ambitoItem}}"
+                    hidden$="[[_hideInput('ambito', _params)]]">
+                </vaadin-combo-box>
+                <vaadin-combo-box label="Finalidad del procedimiento" items="[[finalidad]]"
+                    value="{{data.finalidad}}" selected-item="{{data.finalidadItem}}"
+                    hidden$="[[_hideInput('finalidad', _params)]]">
+                </vaadin-combo-box>
+                <vaadin-combo-box label="Personal que atiende" items="[[personal]]"
+                    value="{{data.personalAtiende}}" selected-item="{{data.personalAtiendeItem}}"
+                    hidden$="[[_hideInput('personalAtiende', _params)]]">
+                </vaadin-combo-box>
+                <vaadin-combo-box label="Forma de realización del acto quirúrgico" items="[[formas]]"
+                    value="{{data.formaActoQuirurgico}}" selected-item="{{data.formaActoQuirurgicoItem}}"
+                    hidden$="[[_hideInput('formaActoQuirurgico', _params)]]">
+                </vaadin-combo-box>
+                <cie-combo label="Diagnóstico principal" required value="{{data.diagnosticoPrincipal}}" 
+                    selected-item="{{data.diagnosticoPrincipalItem}}" 
+                    hidden$="[[_hideInput('diagnosticoPrincipalItem', _params)]]">
+                </cie-combo>
+                <cie-combo label="Diagnóstico relacionado" value="{{data.diagnosticoRelacionado}}" 
+                    selected-item="{{data.diagnosticoRelacionadoItem}}" 
+                    hidden$="[[_hideInput('diagnosticoRelacionadoItem', _params)]]">
+                </cie-combo>
+                <cie-combo label="Complicación" value="{{data.complicacion}}" 
+                    selected-item="{{data.complicacionItem}}" hidden$="[[_hideInput('complicacionItem', _params)]]">
+                </cie-combo>
+            `;
+        }
+
+        /**
+            * Resultados query.
+            */
+        _parametrosData(e) {
+            const result = e.detail.value.parametrosRips.results;
+            const parametros = result.length > 0 ? result[0] : {};
+            this._params = JSON.parse(parametros.data);
+            for (let param in this._params) {
+                this.set(`data.${param}`, this.data[param] || this._params[param]);
+            }
+        }
+
+        /**
+            * Indica si se muestra el input.
+            */
+        _hideInput(name, params) {
+            return name in params;
+        }
+
+        /**
+            * Valida el formulario
+        */
+        validate() {
+            const fields = this.shadowRoot.querySelectorAll('vaadin-combo-box, cie-combo');
+            const validaciones = [...fields].map(e => e.validate());
+            return validaciones.every(e => e === true);
+        }
+    }
+
+    window.customElements.define(DiagnosticoProcedimiento.is, DiagnosticoProcedimiento);
+</script>

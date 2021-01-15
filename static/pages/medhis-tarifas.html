@@ -1,0 +1,221 @@
+<link rel="import" href="../bower_components/vaadin-combo-box/theme/material/vaadin-combo-box.html">
+<link rel="import" href="../bower_components/vaadin-grid/theme/material/vaadin-grid.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../components/tarifa-form.html">
+<link rel="import" href="../my-icons.html">
+
+<script src="../js/utils.js"></script>
+<script>
+    /**
+     * `medhis-tarifas` Página para listar las tarifas del tenant.
+     *
+     * @customElement
+     * @polymer
+     * @extends {Polymer.Element}
+     */
+    class MedhisTarifas extends Polymer.Element {
+        /**
+         * String providing the tag name to register the element under.
+         */
+        static get is() {
+            return 'medhis-tarifas';
+        }
+
+        /**
+         * Object describing property-related metadata used by Polymer features
+         */
+        static get properties() {
+            return {
+                /**
+                 * Id del cliente
+                 */
+                cliente: String,
+
+                /**
+                 * Id del convenio
+                 */
+                convenio: String,
+
+                /**
+                 * Id de la institucion
+                 */
+                institucion: String,
+
+                /**
+                 * Tarifas
+                 */
+                tarifas: {
+                    type: Array,
+                    value: () => [],
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+        
+                    paper-card {
+                        width: 100%;
+                    }
+
+                    paper-fab {
+                        position: absolute;
+                        right: 30px;
+                        bottom: 10px;
+                    }
+                </style>
+
+                <graphql-query result="{{dataFiltros}}">
+                    query tarifasFiltros {
+                        clientes {
+                            results { id, nombre }
+                        }
+                        instituciones {
+                            results { id, nombre }
+                        }
+                    }
+                </graphql-query>
+                <graphql-query result="{{dataConvenios}}" variables="[[_convenioVariables(cliente)]]">
+                    query conveniosFiltros($cliente: ID!) {
+                        convenios: planes(cliente: $cliente) {
+                            results { id, nombre }
+                        }
+                    }
+                </graphql-query>
+                <graphql-query variables="[[_tarifasVariables(convenio, institucion)]]" on-result-changed="_getTarifas">
+                    query todasTarifas($institucion: ID!, $convenio: ID!) {
+                        tarifas(institucion: $institucion, plan: $convenio) {
+                            results { 
+                                id
+                                valor
+                                coopago
+                                servicio { id, nombre }
+                            }
+                        }
+                    }
+                </graphql-query>
+
+                <paper-card>
+                    <div class="card-content">
+                        <vaadin-combo-box autofocus label="Empresa" required items="[[dataFiltros.clientes.results]]"
+                            item-label-path="nombre" item-value-path="id" value="{{cliente}}">
+                        </vaadin-combo-box>
+                        <vaadin-combo-box label="Convenio" required items="[[dataConvenios.convenios.results]]"
+                            item-label-path="nombre" item-value-path="id" value="{{convenio}}">
+                        </vaadin-combo-box>
+                        <vaadin-combo-box label="Institución" required items="[[dataFiltros.instituciones.results]]"
+                            item-label-path="nombre" item-value-path="id" value="{{institucion}}">
+                        </vaadin-combo-box>
+                    </div>
+                </paper-card>
+                <br><br>
+                <vaadin-grid id="table" items="[[tarifas]]" on-active-item-changed="edit">
+                    <vaadin-grid-column flex-grow="2" path="servicio.nombre" header="Servicio"></vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Valor</template>
+                        <template>[[_formatCurrency(item.valor)]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Coopago</template>
+                        <template>[[_formatCurrency(item.coopago)]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column flex-grow="0">
+                        <template class="header"></template>
+                        <template>
+                            <paper-icon-button icon="my-icons:delete" on-click="delete"></paper-icon-button>
+                        </template>
+                    </vaadin-grid-column>
+                </vaadin-grid>
+
+                <paper-fab icon="my-icons:add" elevation="3" on-click="create"></paper-fab>
+            `;
+        }
+
+        /** Variables para query de convenio */
+        _convenioVariables(cliente) {
+            this.convenio = '';
+            return cliente ? { cliente } : {};
+        }
+
+        /** Variables para query de tarifas */
+        _tarifasVariables(convenio, institucion) {
+            if (!convenio || !institucion) this.tarifas = [];
+            return convenio && institucion ? { convenio, institucion } : {};
+        }
+
+        /** */
+        _getTarifas(e) {
+            this.tarifas = e.detail.value.tarifas.results;
+        }
+
+        _formatCurrency(value) {
+            return formatCurrency(value);
+        }
+
+        /** Retorna el formulario. */
+        static _getForm() {
+            return Medhis.tarifaFormInstance;
+        }
+
+        /**
+         * Muestra formulario para crear un plan.
+         */
+        create() {
+            const form = MedhisTarifas._getForm();
+            form.id = null;
+            form.opened = true;
+            form.convenio = this.convenio;
+            form.institucion = this.institucion;
+        }
+
+        /**
+         * Muestra el formulario para editar el plan.
+         */
+        edit(e) {
+            if (e.detail.value) {
+                const form = MedhisTarifas._getForm();
+                form.id = e.detail.value.id;
+                this.$.table.activeItem = null;
+                form.convenio = this.convenio;
+                form.institucion = this.institucion;
+                form.opened = true;
+            }
+        }
+
+        /** Mutacion para borrar tarifa */
+        _deleteMutation(tarifa) {
+            const deleteMutation = Apollo.gql`
+                mutation borrarTarifa($tarifa: ID!) {
+                    borrarTarifa(id: $tarifa) {
+                        ok
+                        errors { field, messages }
+                    }
+                }
+            `;
+
+            Apollo.client.mutate({
+                mutation: deleteMutation,
+                variables: { tarifa },
+                refetchQueries: ['todasTarifas'],
+            });
+        }
+
+        /**
+         * Borra la tarifa
+         */
+        delete(e) {
+            const { id } = e.model.item;
+            this._deleteMutation(id);
+        }
+    }
+
+    window.customElements.define(MedhisTarifas.is, MedhisTarifas);
+</script>

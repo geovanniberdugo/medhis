@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}agenda citas{% endblock title %}
+
+{% block content %}
+    <header class="header-title">
+        <h1>{% trans "agenda citas" %}</h1>
+    </header>
+
+    <mh-agenda-citas></mh-agenda-citas>
+{% endblock content %}
+
+{% block dialogs %}
+<nueva-cita-form></nueva-cita-form>
+<detalle-cita></detalle-cita>
+{% endblock dialogs %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-agenda-citas.js' %}"></script>
+{% endblock js %}

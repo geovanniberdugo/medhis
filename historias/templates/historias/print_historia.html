@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+<style>
+    h1 {
+        margin-top: 10px; 
+        margin-bottom: 10px;
+    }
+
+    h2 {
+        font-size: 15pt;
+        margin-top: 0px;
+    }
+
+    hr {
+        height: 2px;
+        background-color: black !important;
+    }
+
+    canvas {
+        visibility: none;
+    }
+
+    #header {
+        display: grid;
+        align-items: center;
+        justify-items: center;
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    #patient .info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    #patient .info p {
+        margin: 0px;
+    }
+
+    #record .content {
+        columns: 2 20em;
+    }
+
+    /* #record .content h2 {
+        column-span: all;
+    } */
+
+    #record p {
+        margin: 5px;
+        font-size: 11pt;
+    }
+
+    #signature {
+        text-align: right;
+    }
+
+    #signature p {
+        margin: 0px;
+        padding-right: 20%;
+    }
+
+    .big-text {
+        font-size: large;
+    }
+
+    .record-title {
+        padding: 3px;
+        margin-bottom: 0px;
+        font-size: 10pt !important;
+        background-color: #d3d3d396 !important;
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="print-card">
+    <section id="header">
+        {% with institucion=historia.cita.servicio_prestado.orden.institucion %}
+        <div>
+            {% if institucion.logo %}
+            <img src="{{ institucion.logo.url }}" alt="Logo institucion" width="200" height="80">
+            {% endif %}
+        </div>
+        <div class="center">
+            <strong class="big-text">{{ institucion.titulo_historia }}</strong><br>
+            {% if institucion.subtitulo_historia %}<strong class="big-text">{{ institucion.subtitulo_historia }}</strong><br>{% endif %}
+            <strong class="big-text">{{ institucion.get_tipo_documento_display }} {{ institucion.identificacion }}</strong><br>
+            {% if institucion.universidad %}<strong class="big-text">{{ institucion.universidad }}</strong><br>{% endif %}
+        </div>
+        {% endwith %}
+    </section>
+    <hr>
+    <section id="patient">
+        <h2 class="center">Datos Generales</h2>
+        {% with orden=historia.cita.servicio_prestado.orden %}
+        <div class="info">
+            <div>
+                <p><strong>Nombre:</strong> {{ paciente }}</p>
+                <p><strong>Identificación:</strong> {{paciente.tipo_documento}} {{ paciente.numero_documento }}</p>
+                <p><strong>Estado Civil:</strong> {{ paciente.get_estado_civil_display }}</p>
+                <p><strong>Fecha de Nacimiento:</strong> {{ paciente.fecha_nacimiento|date:"d-m-Y" }}</p>
+                <p><strong>Edad:</strong> {{ edad }}</p>
+                <p><strong>Sexo:</strong> {{ paciente.get_genero_display }}</p>
+                <p><strong>Ocupación:</strong> {% firstof paciente.profesion|title "Ninguna" %}</p>
+                <p><strong>Lugar de residencia:</strong> {% firstof paciente.lugar_residencia|title "Ninguna" %}</p>
+            </div>
+            <div>
+                <p><strong>Dirección:</strong> {{ paciente.direccion }}</p>
+                <p><strong>Teléfono del domicilio:</strong> {% firstof paciente.telefono paciente.celular '' %}</p>
+                <p><strong>Entidad:</strong> {{ orden.plan|title }}</p>
+                <p><strong>Tipo de Usuario:</strong> {{ orden.get_tipo_usuario_display }}</p>
+                <p><strong>Afiliación:</strong> {{ orden.get_afiliacion_display }}</p>
+                <p><strong>Fecha de Atención:</strong> {{ historia.cita.inicio|date:"d/m/Y" }}</p>
+                <p><strong>Hora de Atención:</strong> {{ historia.cita.inicio|date:"h:i A" }}</p>
+                <p><strong>Número de Orden:</strong> {{ orden.id }}</p>
+                <p><strong>Servicio:</strong> {{ historia.cita.servicio|title }}</p>
+            </div>
+        </div>        
+        {% endwith %}
+    </section>
+    <hr>
+    <section id="record">
+        <h2 class="center">{{ historia.formato.nombre|title }}</h2>
+        <div class="content">
+            {% for field in content %}
+                {% if field.type == 'title' %}
+                <h2 class="record-title center">{{ field.label|title }}</h2>
+                {% elif field.type == 'subtitle' %}
+                <h3>{{ field.label }}</h3>
+                {% elif field.type == 'subtitle2' %}
+                <h4>{{ field.label }}</h4>
+                {% elif field.type == 'space' %}
+                <br>
+                {% elif field.type == 'text' %}
+                <p>{% if field.label %}<strong>{{ field.label }}:</strong>{% endif %} {{ field.value }}</p>
+                {% elif field.type == 'table' %}
+                <h4>{{ field.label }}</h4>
+                <table>
+                    {% for row in field.value %}
+                    <tr>
+                        {% for _, data in row.items %}
+                        <td>{{ data }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% elif field.type == 'canvas' %}
+                <h4>{{ field.label }}</h4>
+                <div class="canvas" data-image="{{ field.image }}" data-data="{{ field.value }}"></div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </section>
+    <hr>
+    <section id="signature">
+        {% with medico=historia.proveedor %}
+        <p><strong>{% firstof medico.especialidad_historia 'Doctor' %}:</strong></p>
+        {% if medico.firma %}
+        <img src="{{ medico.firma.url }}" alt="Logo institucion" width="200" height="40" style="padding-right: 20%;">
+        {% endif %}
+        <p><strong>{{ medico }}</strong></p>
+        {% if medico.registro_medico %}<p><strong>RM:</strong> {{ medico.registro_medico }}</p>{% endif %}
+        {% endwith %}
+    </section>
+</div>
+<paper-fab id="print-button" class="hidden-print" icon="my-icons:print"></paper-fab>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-print-historia.js' %}"></script>
+<script src="{% static 'bower_components/fabric.js/dist/fabric.js' %}"></script>
+
+<script>
+    const baseCanvas = document.createElement('canvas');
+    const canvases = document.querySelectorAll('.canvas');
+    const canvas = new fabric.Canvas(baseCanvas, {
+        width: 350,
+        height: 470,
+    });
+
+    [...canvases].map((e) => { createImage(canvas, e); });
+
+    function createImage(canvas, element) {
+        const { image, data } = element.dataset;
+
+        fabric.Image.fromURL(image, (img) => { 
+            canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
+            canvas.loadFromJSON(
+                Object.assign({}, canvas.toObject(), { objects: JSON.parse(data) }),
+                () => { element.innerHTML = `<img src="${canvas.toDataURL()}" height="300px">`; }
+            )
+        });
+    }
+</script>
+{% endblock js %}

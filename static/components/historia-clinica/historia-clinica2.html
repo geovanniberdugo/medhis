@@ -1,0 +1,280 @@
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/paper-tabs/paper-tabs.html">
+<link rel="import" href="../../bower_components/paper-tabs/paper-tab.html">
+<link rel="import" href="../../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="historia-clinica-diagnostico.html">
+<link rel="import" href="historia-clinica-historias2.html">
+<link rel="import" href="historia-clinica-adjuntos.html">
+<link rel="import" href="historia-clinica-content.html">
+<link rel="import" href="historia-clinica-formato.html">
+
+<script>
+    class HistoriaClinica extends Polymer.Element {
+        static get is() { return 'historia-clinica'; }
+
+        static get properties() {
+            return {
+                historia: {
+                    type: Object,
+                    value() {
+                        // return {
+                        //     nombre_servicio: 'HISTORIA CLINICA',
+                        //     is_editable: true,
+                        //     paciente_graph_id: 'XEWR3',
+                        //     paciente_id: 2,
+                        //     contenido: {
+                        //         order: ['a', 'b'],
+                        //         a: { nombre: 'Anamnesis Alimentaria', fields: {
+                        //             order: ['desayuno', 'habitos', 'date', 'medias', 'apetito', 'titulo', 'laboratorios'],
+                        //             desayuno: {tipo: 'textarea', nombre: 'Desayuno', required: true},
+                        //             habitos: {tipo: 'switch', nombre: 'Habitos intestinales'},
+                        //             date: {tipo: 'date', nombre: 'Date'},
+                        //             medias: {tipo: 'number', nombre: 'Medias mañanas', required: true},
+                        //             apetito: {tipo: 'select', nombre: 'Apetito', options: [
+                        //                 {value: 1, label: 'Bueno'},
+                        //                 {value: 2, label: 'Malo'},
+                        //                 {value: 3, label: 'Regular'}
+                        //             ], required: true},
+                        //             titulo: {tipo: 'titulo', nombre: 'TITULO'},
+                        //             laboratorios: {
+                        //                 fields: [
+                        //                     {
+                        //                         "nombre": "nombre",
+                        //                         "required": true,
+                        //                         "tipo": "text"
+                        //                     },
+                        //                     {
+                        //                         "nombre": "promo",
+                        //                         "required": true,
+                        //                         "tipo": "text"
+                        //                     }
+                        //                 ],
+                        //                 items: [],
+                        //                 tipo: "table"
+                        //             } 
+                        //         }},
+                        //         b: {nombre: 'Anamnesis', fields: {
+                        //             order: ['almuerzo', 'habitos', 'medias'],
+                        //             almuerzo: {tipo: 'textarea', nombre: 'Almuerzo', required: true},
+                        //             habitos: {tipo: 'switch', nombre: 'Habitos intestinales'},
+                        //             medias: {tipo: 'text', nombre: 'Medias mañanas', required: true}    
+                        //         }}
+                        //     }, // Tabs Object
+                        //     data: {
+                        //         a: { habitos: 'on' }, b: { medias: 'asdad' },
+                        //     },
+                        // }; // Value
+                        return { contenido: {}, data: {} };
+                    },
+                },
+
+                /**
+                    * Indica si el formato incluye diagnostico
+                    */
+                diagnostico: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                selected: {
+                    type: String,
+                    value: 'formato',
+                },
+
+                /**
+                    * Page seleccionado
+                    */
+                selectedPage: {
+                    type: Object,
+                    value: () => ({}),
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                        /*--paper-tabs-selection-bar-color: var(--app-primary-color);*/
+                    }
+
+                    a {
+                        color: var(--material-body-text-color);
+                        text-decoration: none;
+                    }
+
+                    paper-tabs {
+                        background: white;
+                    }
+
+                    paper-tab {
+                        text-transform: uppercase;
+                    }
+
+                    paper-tab.invalid {
+                        color: var(--error-color);
+                    }
+
+                    historia-clinica-historias {
+                        padding: 5px;
+                    }
+
+                    .header {
+                        background-color: white;
+                        border-bottom: 1px solid #e8e8e8;
+                        text-transform: uppercase;
+                        text-align: center;
+                        padding: 10px;
+                    }
+
+                    .page {
+                        background-color: white;
+                        padding: 15px;
+                    }
+
+                    .actions {
+                        padding: 5px 16px;
+                        background-color: white;
+                        border-top: 1px solid #e8e8e8;
+                    }
+
+                    .actions :last-child {
+                        float: right;
+                    }
+                </style>
+
+                <div class="header">[[historia.nombreServicio]] - [[historia.proveedor]] - [[_formatFecha(historia.fecha)]]</div>
+
+                <paper-tabs id="tabs" selected="{{selected}}" scrollable attr-for-selected="index">
+                    <paper-tab index="formato">HC Actual</paper-tab>
+                    <template is="dom-if" if="[[diagnostico]]">
+                        <paper-tab index="diagnostico">Diagnostico</paper-tab>
+                    </template>
+                    <paper-tab index="adjuntos">Adjuntos</paper-tab>
+                    <paper-tab index="historial">Historial</paper-tab>
+                </paper-tabs>
+
+                <iron-pages id="pages" selected="{{selected}}" selected-item="{{selectedPage}}" attr-for-selected="index">
+                    <div class="page" index="formato">
+                        <historia-clinica-formato formato="[[historia.contenido]]" data="[[historia.data]]"
+                            on-validate-historia="_checkValidity">
+                        </historia-clinica-formato>
+                    </div>
+                    <template is="dom-if" if="[[diagnostico]]">
+                        <div class="page" index="diagnostico">
+                            <historia-clinica-diagnostico clase="[[historia.tipoRips]]" data="[[_getData('rips', historia.data)]]" 
+                                on-validate-historia="_checkValidity">
+                            </historia-clinica-diagnostico>
+                        </div>
+                    </template>
+                    <div class="page" index="adjuntos">
+                        <historia-clinica-adjuntos visita-url="[[historia.visitaUrl]]" url="[[historia.adjuntosUrl]]" is-editable=[[historia.is_editable]] on-close-historia="_close" on-validate-historia="_checkValidity"></historia-clinica-adjuntos>
+                    </div>
+                    <div class="page" index="historial">
+                        <historia-clinica-historias paciente="[[historia.paciente_id]]" sesion="[[historia.sesion_id]]"></historia-clinica-historias>
+                    </div>
+                </iron-pages>
+                <div class="actions">
+                    <template is="dom-if" if="[[historia.is_editable]]">
+                        <paper-button on-tap="_save" hidden="[[_hideSave(selected)]]">Guardar</paper-button>
+                        <paper-button on-tap="_close">Cerrar</paper-button>
+                    </template>
+                    <a title="ver encuentro" href="[[historia.visitaUrl]]" tabindex="-1">
+                        <paper-button>Volver a Visita</paper-button>
+                    </a>
+                </div>
+                <paper-dialog on-iron-overlay-closed="_confirmClose" id="dialog">
+                    <h2>¿Estás seguro que deseas cerrar la historia?</h2>
+                    <p>Recuerda que si cierras la historia no podrás seguir editandola.</p>
+                    <div class="actions">
+                        <paper-button dialog-dismiss>NO</paper-button>
+                        <paper-button dialog-confirm autofocus>SI</paper-button>
+                    </div>
+                </paper-dialog>
+            `;
+        }
+
+        /**
+            * Obtiene el nombre del tab basado en el key.
+            * @param {string} key
+            * @return {string}
+            */
+        _getTabName(key) {
+            return this.historia.contenido[key].nombre;
+        }
+
+        /**
+            * Obtiene los datos del tab basado en el key.
+            *
+            * @param {string} key Nombre de la llave en los datos.
+            * @param {object} data Data de la historia.
+            * @return {Object}
+            */
+        _getData(key, data) {
+            if (!(key in data)) {
+                data[key] = {};
+            }
+
+            return data[key];
+        }
+
+        /**
+            * Indica si se debe mostrar el boton guardar dependiendo del tab seleccionado.
+            *
+            * @param {string} tab Tab seleccionado
+            */
+        _hideSave(tab) {
+            return (tab === 'historial' || tab === 'adjuntos');
+        }
+
+        _checkValidity(e) {
+            const index = this.$.pages.indexOf(e.target.parentElement);
+            if (e.target.invalid) {
+                this.$.tabs.items[index].classList.add('invalid');
+            } else {
+                this.$.tabs.items[index].classList.remove('invalid');
+            }
+        }
+
+        _save() {
+            const content = this.selectedPage.children[0];
+            content.save();
+        }
+
+        _close() {
+            const formato = this.shadowRoot.querySelector('historia-clinica-formato');
+            const diagnostico = this.shadowRoot.querySelector('historia-clinica-diagnostico');
+            const aValidar = diagnostico ? [formato, diagnostico] : [formato];
+
+            const validaciones = aValidar.map(e => e.validate());
+            const valid = validaciones.every(e => e === true);
+
+            if (valid) {
+                this.$.dialog.open();
+            } else {
+                this.dispatchEvent(new CustomEvent('notify-toast-form-error', {
+                    bubbles: true, composed: true, detail: {},
+                }));
+            }
+        }
+
+        _confirmClose(e) {
+            if (e.detail.confirmed) {
+                this.historia.terminada = true;
+                this.dispatchEvent(new CustomEvent('save-historia', {
+                    detail: { terminada: true },
+                }));
+            }
+        }
+
+        _formatFecha(fecha) {
+            return fecha ? moment.utc(fecha).format('DD/MM/YYYY hh:mm A') : '';
+        }
+    }
+
+    window.customElements.define(HistoriaClinica.is, HistoriaClinica);
+</script>

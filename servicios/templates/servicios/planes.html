@@ -1,0 +1,19 @@
+{% extends "base.html" %} 
+{% load i18n static %} 
+
+{% block imports %}
+<link rel="import" href="{% static 'pages/medhis-planes.html' %}"> 
+{% endblock imports %} 
+
+{% block content %}
+<header class="header-title">
+    <h1>{% trans "Planes" %}</h1>
+    <small>{% trans "Empresa" %}: {{ cliente|title }}</small>
+</header>
+
+<medhis-planes cliente="{{ cliente.id }}"></medhis-planes>
+{% endblock content %} 
+
+{% block dialogs %}
+<plan-form cliente="{{ cliente.id }}"></plan-form>
+{% endblock dialogs %}

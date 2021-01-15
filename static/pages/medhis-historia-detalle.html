@@ -1,0 +1,235 @@
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../components/historia-clinica/historia-clinica2.html">
+<link rel="import" href="../components/paciente-info.html">
+
+<script src="../js/utils.js"></script>
+<script>
+    /**
+        * `medhis-historia-detalle` Página para ver y editar el encuentro.
+        * ss
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class MedhisHistoriaDetalle extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'medhis-historia-detalle';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * ID de la encuentro.
+                    */
+                encuentroId: String,
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+                </style>
+
+                <graphql-query variables="[[_setQueryVariables(encuentroId)]]" result="{{result}}">
+                    query HistoriaDetallePage($encuentro: ID!) {
+                        encuentro(id: $encuentro) {
+                            id
+                            data
+                            fecha
+                            canEdit
+                            contenido 
+                            terminada
+                            visitaUrl
+                            adjuntosUrl
+                            formato { id, diagnostico }
+                            proveedor { id, nombreCompleto }
+                            sesion: cita {
+                                id
+                                paciente { 
+                                    id 
+                                    foto 
+                                    editUrl 
+                                    primerNombre 
+                                    tipoDocumento 
+                                    segundoNombre 
+                                    primerApellido 
+                                    segundoApellido 
+                                    fechaNacimiento 
+                                    numeroDocumento
+                                }
+                                servicio { id, nombre, tipoRips }
+                            }
+                        }
+                    }
+                </graphql-query>
+
+                <paciente-info full-width paciente="[[_serializePacient(result.encuentro.sesion.paciente)]]"></paciente-info>
+                <br>
+                <historia-clinica historia="[[_setEncuentro(result.encuentro)]]" diagnostico="[[result.encuentro.formato.diagnostico]]"
+                    on-save-historia="saveEncuentro">
+                </historia-clinica>
+            `;
+        }
+
+        /**
+            * Use for one-time configuration of your component after local DOM is initialized.
+            */
+        ready() {
+            super.ready();
+            this.client = this.shadowRoot.querySelector('graphql-query')._getClient();
+        }
+
+        /**
+            * Sets las variables para el query.
+            *
+            * @param {string} encuentro Id del encuentro.
+            * @return {object}
+            */
+        _setQueryVariables(encuentro) {
+            return encuentro ? { encuentro } : {};
+        }
+
+        /**
+            * Sets the patient data as needed by paciente-info component.
+            *
+            * @param {string} paciente Id del cliente.
+            * @return {object}
+            */
+        _serializePacient(paciente) {
+            return {
+                foto: paciente.foto,
+                edit_link: paciente.editUrl,
+                primer_nombre: paciente.primerNombre,
+                tipo_documento: paciente.tipoDocumento,
+                segundo_nombre: paciente.segundoNombre,
+                primer_apellido: paciente.primerApellido,
+                segundo_apellido: paciente.segundoApellido,
+                fecha_nacimiento: paciente.fechaNacimiento,
+                numero_documento: paciente.numeroDocumento,
+            };
+        }
+
+        /**
+            * Sets el encuentro.
+            *
+            * @param {object} encuentro encuentro
+            * @return {object}
+            */
+        _setEncuentro(encuentro) {
+            return {
+                fecha: encuentro.fecha,
+                is_editable: encuentro.canEdit,
+                visitaUrl: encuentro.visitaUrl,
+                data: JSON.parse(encuentro.data),
+                adjuntosUrl: encuentro.adjuntosUrl,
+                paciente_id: encuentro.sesion.paciente.id,
+                contenido: JSON.parse(encuentro.contenido),
+                tipoRips: encuentro.sesion.servicio.tipoRips,
+                proveedor: encuentro.proveedor.nombreCompleto,
+                nombreServicio: encuentro.sesion.servicio.nombre,
+            };
+        }
+
+        /**
+            * Despacha un evento si hubo un error al momento de ejecutar alguna mutación.
+            * @event notify-toast-error
+            */
+        _dispatchErrorAdministrativo() {
+            this.dispatchEvent(new CustomEvent('notify-toast-error', {
+                bubbles: true,
+                composed: true,
+                detail: {
+                    text: 'Oops! Hubo un error por favor comunicate con un administrador.',
+                },
+            }));
+        }
+
+        /**
+            * Notifica toast de mensaje de aporbación si la mutación fue correcta.
+            * @event notify-toast-success
+            */
+        _dispatchSuccessMessage() {
+            this.dispatchEvent(new CustomEvent('notify-toast-success', {
+                bubbles: true,
+                composed: true,
+                detail: {
+                    text: 'Se han actualizado los datos de la historia con éxito',
+                },
+            }));
+        }
+
+        /**
+            * Serializa el encuentro a como lo necesita la mutación.
+            */
+        _serializeEncuentro(id, { terminada, data }) {
+            return {
+                id,
+                terminada,
+                data: JSON.stringify(data),
+            };
+        }
+
+        /**
+            * Edita el encuentro
+            *
+            * @param {object} encuentro
+            */
+        _editarEncuentro(encuentro) {
+            const editarEncuentroMutation = Apollo.gql`mutation editarEncuentro($encuentro: HistoriaUpdateGenericType!) {
+                editarEncuentro(input: $encuentro) {
+                    ok
+                    errors { field, messages }
+                    historia {
+                        id
+                        data
+                        canEdit
+                        terminada
+                        visitaUrl
+                    }
+                }
+            }`;
+
+            this.client.mutate({
+                mutation: editarEncuentroMutation,
+                variables: { encuentro },
+            })
+                .then((result) => {
+                    const data = result.data.editarEncuentro;
+                    if (data.ok) {
+                        const { historia } = data;
+                        if (historia.terminada) {
+                            window.location = historia.visitaUrl;
+                        } else {
+                            this._dispatchSuccessMessage();
+                        }
+                    }
+                    console.error(data.errors);
+                })
+                .catch((error) => {
+                    console.error(error);
+                    this._dispatchErrorAdministrativo();
+                });
+        }
+
+        /**
+            * Trigger cuando se desea editar el encuentro.
+            */
+        saveEncuentro(e) {
+            e.stopPropagation();
+            const encuentro = this._serializeEncuentro(this.encuentroId, e.target.historia);
+            this._editarEncuentro(encuentro);
+        }
+    }
+
+    window.customElements.define(MedhisHistoriaDetalle.is, MedhisHistoriaDetalle);
+</script>

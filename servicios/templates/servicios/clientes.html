@@ -1,0 +1,18 @@
+{% extends "base.html" %} 
+{% load i18n static %}
+
+{% block imports %}
+<link rel="import" href="{% static 'pages/medhis-clientes.html' %}">
+{% endblock imports %}
+
+{% block content %}
+    <header class="header-title">
+        <h1>{% trans "Clientes" %}</h1>
+    </header>
+
+    <medhis-clientes></medhis-clientes>
+{% endblock content %}
+
+{% block dialogs %}
+    <cliente-form></cliente-form>
+{% endblock dialogs %}

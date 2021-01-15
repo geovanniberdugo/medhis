@@ -1,0 +1,92 @@
+<link rel="import" href="../bower_components/vaadin-combo-box/theme/material/vaadin-combo-box.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<script>
+    /**
+        * `sucursales-combo` Combo-box con las sucursales.
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class SucursalesCombo extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'sucursales-combo';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * Indica si el combo es requerido
+                    */
+                required: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                /**
+                    * Indica si el combo se muestra
+                    */
+                hidden: {
+                    type: Boolean,
+                    value: false,
+                },
+
+                /**
+                    * Valor
+                    */
+                value: {
+                    type: String,
+                    notify: true,
+                },
+
+                /**
+                    * Item seleccionado
+                    */
+                selectedItem: {
+                    type: Object,
+                    notify: true,
+                },
+            };
+        }
+    
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+
+                    vaadin-combo-box {
+                        width: 100%;
+                    }
+                </style>
+
+                <graphql-query result="{{result}}">
+                    query sucursales {
+                        sucursales {
+                            results {
+                                id
+                                nombre @title_case
+                            }
+                        }
+                    }
+                </graphql-query>
+
+                <vaadin-combo-box label="Sucursal" required="[[required]]" hidden="[[hidden]]"
+                    item-label-path="nombre" item-value-path="id" items="[[result.sucursales.results]]"
+                    value="{{value}}" selected-item="{{selectedItem}}">
+                </vaadin-combo-box>
+            `;
+        }
+    }
+
+    window.customElements.define(SucursalesCombo.is, SucursalesCombo);
+</script>

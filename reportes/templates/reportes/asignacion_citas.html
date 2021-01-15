@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Verificación de programación de citas por entidad{% endblock title %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Verificación de programación de citas por entidad" %}</h1>
+</header>
+
+<mh-asignacion-citas></mh-asignacion-citas>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-asignacion-citas.js' %}"></script>
+{% endblock js %}

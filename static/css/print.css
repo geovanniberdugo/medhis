@@ -1,0 +1,92 @@
+table {
+    border-spacing: 0;
+    width: 100%;
+}
+
+th, td {
+    padding: 8px;
+}
+
+h1 {
+    text-transform: uppercase;
+}
+
+header {
+    display: grid;
+    text-align: center;
+    grid-template-columns: 1fr 1fr 1fr; /* 3 cols */ 
+}
+
+#print-button {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+}
+
+.print-card {
+    background-color: white;
+    padding: 24px;
+}
+
+.center {
+    text-align: center;
+}
+
+.right {
+    text-align: right;
+}
+
+.upper {
+    text-transform: uppercase;
+}
+
+@page {
+    size: letter;
+    margin: 10mm;
+}
+
+@media print {
+    * {
+        background: transparent !important;
+        text-shadow: none !important;
+        color: black !important;
+    }
+
+    body {
+        font: 9pt Georgia, "Roboto", "Noto", sans-serif;
+        margin: 0px;
+    }
+
+    h1 {
+        font-size: 16pt;
+    }
+
+    h2 {
+        font-size: 12pt;
+        margin-top: 20px;
+    }
+
+    h3 {
+        font-size: 11pt;
+    }
+
+    app-header {
+        display: none;
+    }
+
+    main {
+        padding: 0;
+    }
+
+    .print-card {
+        padding: 0;
+    }
+
+    .hidden-print {
+        display: none;
+    }
+
+    .visible-print {
+        display: block;
+    }
+}

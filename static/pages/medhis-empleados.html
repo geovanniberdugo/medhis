@@ -1,0 +1,110 @@
+<link rel="import" href="../bower_components/vaadin-grid/theme/material/vaadin-grid.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../components/empleado-form.html">
+<link rel="import" href="../my-icons.html">
+
+<script>
+    /**
+        * `medhis-empleados` Página para listar, crear editar empleados administrativos
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class MedhisEmpleados extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'medhis-empleados';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+
+                    paper-fab {
+                        right: 30px;
+                        position: absolute;
+                        bottom: calc(100vh - 530px);
+                    }
+                </style>
+
+                <graphql-query result="{{data}}">
+                    query usuariosAdministrativos {
+                        empleados(medicos: false) {
+                            results {
+                                id
+                                activo
+                                cedula
+                                nombreCompleto
+                            }
+                        }
+                    }
+                </graphql-query>
+
+                <vaadin-grid id="table" items="[[data.empleados.results]]" on-active-item-changed="edit">
+                    <vaadin-grid-column header="Nombre" path="nombreCompleto"></vaadin-grid-column>
+                    <vaadin-grid-column header="Identificación" path="cedula"></vaadin-grid-column>
+                    <vaadin-grid-column header="Activo">
+                        <template>
+                            <iron-icon icon="my-icons:[[_estadoIcon(item.activo)]]"></iron-icon>
+                        </template>
+                    </vaadin-grid-column>
+                </vaadin-grid>
+
+                <paper-fab icon="my-icons:add" elevation="3" on-tap="create"></paper-fab>
+            `;
+        }
+
+        /** Retorna el formulario. */
+        static _getForm() {
+            return Medhis.empleadoFormInstance;
+        }
+
+        /**
+            * Icono del estado
+            */
+        _estadoIcon(estado) {
+            return estado ? 'done' : 'clear';
+        }
+
+        /**
+            * Muestra formulario para crear un plan.
+            */
+        create() {
+            const form = MedhisEmpleados._getForm();
+            form.id = null;
+            form.opened = true;
+        }
+
+        /**
+            * Muestra el formulario para editar el plan.
+            */
+        edit(e) {
+            if (e.detail.value) {
+                const form = MedhisEmpleados._getForm();
+                form.id = e.detail.value.id;
+                this.$.table.activeItem = null;
+                form.opened = true;
+            }
+        }
+    }
+
+    window.customElements.define(MedhisEmpleados.is, MedhisEmpleados);
+</script>

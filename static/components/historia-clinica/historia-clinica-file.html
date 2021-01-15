@@ -1,0 +1,82 @@
+<!-- TODO extender vaadin-upload-file cuando este deje de ser hibrido  -->
+
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../my-icons.html">
+
+<script>
+    /**
+     * `historia-clinica-file` Overrides VaadinUploadFile to add a show button for the file.
+     *
+     * @summary ShortDescription.
+     * @customElement
+     * @polymer
+     * @extends {Polymer.Element}
+     */
+    class HistoriaClinicaFile extends Vaadin.UploadFileElement {
+        /**
+         * String providing the tag name to register the element under.
+         */
+        static get is() {
+            return 'historia-clinica-file';
+        }
+
+        static get properties() {
+            return {
+                isEditable: Boolean,
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block;
+                    }
+                    [hidden] {
+                        display: none;
+                    }
+
+                    [part="show-button"] {
+                        flex: none;
+                        color: var(--material-secondary-text-color);
+                        line-height: 1;
+                        padding: 8px;
+                        margin: -8px 0;
+                    }
+                </style>
+
+                <div part="row">
+                <div part="info">
+                    <div part="done-icon" hidden$="[[!file.complete]]"></div>
+                    <div part="warning-icon" hidden$="[[!file.error]]"></div>
+
+                    <div part="meta">
+                    <div part="name" id="name">[[file.name]]</div>
+                    <div part="status" hidden$="[[!file.status]]" id="status">[[file.status]]</div>
+                    <div part="error" id="error" hidden$="[[!file.error]]">[[file.error]]</div>
+                    </div>
+                </div>
+                <div part="commands">
+                    <paper-icon-button part="show-button" icon="my-icons:remove-red-eye" file-event="file-show" on-tap="_fireFileEvent" hidden$="[[file.error]]"></paper-icon-button>
+                    <div part="start-button" file-event="file-start" on-click="_fireFileEvent" hidden$="[[!file.held]]"></div>
+                    <div part="retry-button" file-event="file-retry" on-click="_fireFileEvent" hidden$="[[!file.error]]"></div>
+                    <div part="clear-button" file-event="file-abort" on-click="_fireFileEvent" hidden$="[[!isEditable]]"></div>
+                </div>
+                </div>
+
+                <vaadin-progress-bar
+                    part="progress"
+                    id="progress"
+                    value$="[[_formatProgressValue(file.progress)]]"
+                    error$="[[file.error]]"
+                    indeterminate$="[[file.indeterminate]]"
+                    uploading$="[[file.uploading]]"
+                    complete$="[[file.complete]]">
+                </vaadin-progress-bar>   
+            `;
+        }
+    }
+
+    window.customElements.define(HistoriaClinicaFile.is, HistoriaClinicaFile);
+</script>

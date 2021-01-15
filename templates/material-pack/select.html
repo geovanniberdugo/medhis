@@ -1,0 +1,13 @@
+{% load rest_framework common_tags %}
+
+<vaadin-combo-box label="{{ field.label }}" items='{{ field|to_json }}'
+                  name="{{ field.name }}" auto-validate {% if field.required %}required{% endif %} 
+                  {% if field.errors %} error-message="{{ field.errors|join:',' }}" invalid {% endif %}
+                  {% if field.value %} value="{{ field.value }}" {% endif %}>
+</vaadin-combo-box>
+
+{% if field.value %}
+<script>
+    document.querySelector('vaadin-combo-box[name="{{ field.name }}"]').value = {{ field.value }};
+</script>
+{% endif %}

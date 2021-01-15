@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}horario de atención{% endblock title %}
+
+{% block content %}
+<header>
+    <h1>{% trans "horario de atención" %}</h1>
+    <small>{% trans "Ingresa el horario de atención que tendra un medico para atender pacientes." %}</small>
+</header>
+
+<mh-horario-atencion></mh-horario-atencion>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-horario-atencion.js' %}"></script>
+{% endblock js %}

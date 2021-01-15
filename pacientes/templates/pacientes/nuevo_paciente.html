@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Nuevo paciente{% endblock title %}
+
+{% block content %}
+<header class="header-title">
+    <h1>{% trans "nuevo paciente" %}</h1>
+</header>
+
+<mh-paciente-nuevo></mh-paciente-nuevo>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-paciente-nuevo.js' %}"></script>
+{% endblock js %}

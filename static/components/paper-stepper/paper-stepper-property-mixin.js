@@ -1,0 +1,96 @@
+/**
+ * StepperPropertyMixin - Mixin.
+ * @polymerMixin
+ * @mixinFunction
+ */
+const StepperPropertyMixin = superClass => class extends superClass {
+    static get properties() {
+        return {
+            /**
+             * This property is used to indicate if the stepper require users to complete one step in order to move on to the next.
+             * If linear is false, it allow users to enter a multi-step flow at any point.
+             */
+            linear: {
+                type: Boolean,
+                value: false,
+            },
+            /**
+             * This is used to know if the stepper is render vertically or horizontally.
+             */
+            horizontal: {
+                type: Boolean,
+                value: false,
+            },
+            /**
+             * This property is used to indicate when the view is displayed for mobile.
+             */
+            mobile: {
+                type: Boolean,
+                value: false,
+            },
+            /**
+             * If true, after the stepper is loaded, if will open the first step.
+             */
+            openFirstStepOnStartup: {
+                type: Boolean,
+                value: false,
+            },
+            /**
+             * This is the active step element.
+             * If the property is equal to
+             *  - null : That means there is no step active
+             *  - undefined : That means no step has been opened yet.
+             */
+            activeStep: {
+                type: Object,
+            },
+            /**
+             * This is the step following the current active step.
+             */
+            nextStep: {
+                type: Object,
+            },
+            /**
+             * This is the step that can be open before the active step.
+             * It can be an editabled step or a step unsaved.
+             */
+            previousStep: {
+                type: Object,
+            },
+            /**
+             * Property used to indicate if the stepper is finished or not.
+             * @readonly
+             */
+            finish: {
+                type: Boolean,
+                value: false,
+                readOnly: true,
+            },
+            /**
+             * Quantity total of step inside the stepper.
+             */
+            numberOfStep: {
+                type: Number,
+                value: 0,
+            },
+            /**
+             * Used for the transition in horizontal mode.
+             * This is the step where we are going. (step targeting)
+             * @private
+             */
+            __toStep: {
+                type: Object,
+            },
+            /**
+             * Used for the transition in horizontal mode.
+             * This is the step we are coming from.
+             * @private
+             */
+            __fromStep: {
+                type: Object,
+            },
+        };
+    }
+};
+
+export default StepperPropertyMixin;

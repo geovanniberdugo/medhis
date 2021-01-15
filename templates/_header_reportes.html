@@ -1,0 +1,20 @@
+{% load l10n %}
+<header>
+    <div>
+        {% if institucion.logo %}
+        <img src={{ institucion.logo.url }} alt="Logo institucion" width="80" height="30">
+        {% endif %}
+    </div>
+    <div class="logo-text">
+        <strong class="big-text">{{ institucion.razon_social }}</strong><br>
+        <strong class="big-text">{{ institucion.get_tipo_documento_display }} {{ institucion.identificacion }}</strong><br>
+        {% for sucursal in sucursales %}
+        <strong class="small-text">{{ sucursal.direccion }}</strong><br>
+        <strong class="small-text">Telefono: {% firstof sucursal.telefono|unlocalize "" %}</strong>
+        {% empty %}
+        <strong class="small-text">{{ institucion.direccion }} </strong><br>
+        <strong class="small-text">Telefono: {% firstof institucion.telefono|unlocalize "" %}</strong>
+        {% endfor %}
+    </div>
+</header>
+<hr>

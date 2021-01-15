@@ -1,0 +1,359 @@
+<link rel="import" href="../bower_components/vaadin-grid/theme/material/vaadin-grid.html">
+<link rel="import" href="../bower_components/paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../bower_components/polymer/lib/elements/dom-if.html">
+<link rel="import" href="../bower_components/apollo-client/graphql-query.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../components/paciente-info.html">
+<link rel="import" href="../my-icons.html">
+
+<script src="../bower_components/moment/moment.js"></script>
+<script>
+    /**
+        * `medhis-historias-sesion` Página para listar las historias de una sesión.
+        *
+        * @customElement
+        * @polymer
+        * @extends {Polymer.Element}
+        */
+    class MedhisHistoriasSesion extends Polymer.Element {
+        /**
+            * String providing the tag name to register the element under.
+            */
+        static get is() {
+            return 'medhis-historias-sesion';
+        }
+
+        /**
+            * Object describing property-related metadata used by Polymer features
+            */
+        static get properties() {
+            return {
+                /**
+                    * ID de la sesión.
+                    */
+                sesionId: String,
+
+                /**
+                    * Indica si modal de confirmación para terminar visita se encuentra abierto o cerrado.
+                    */
+                opened: {
+                    type: Boolean,
+                    value: false,
+                },
+            };
+        }
+
+        static get template() {
+            return Polymer.html`
+                <style>
+                    :host {
+                        display: block
+                    }
+
+                    * {
+                        box-sizing: border-box;
+                    }
+                    
+                    a {
+                        color: var(--material-body-text-color);
+                        text-decoration: none;
+                    }
+
+                    .card {
+                        background-color: white;
+                        box-shadow: initial;
+                        border-radius: initial;
+                        border: 1px solid var(--material-divider-color);
+                        border-bottom: initial;
+                        padding: 5px;
+                    }
+
+                    .last-date {
+                        margin: 5px 0;
+                        text-align: center;
+                        color: var(--error-color);
+                        text-transform: uppercase;
+                    }
+
+                    paper-menu-button[hidden] {
+                        display: none;
+                    }
+                </style>
+
+                <graphql-query variables="[[_setSesionVariables(sesionId)]]" result="{{result}}">
+                    query historiaSesionPageQuery($sesion: ID!) { 
+                        sesion: cita(id: $sesion) { 
+                            id 
+                            inicio
+                            cumplida
+                            terminada
+                            cancelada
+                            canAddEncuentro
+                            servicio { id, nombre }
+                            paciente { 
+                                id
+                                foto
+                                editUrl
+                                primerNombre
+                                tipoDocumento
+                                segundoNombre
+                                primerApellido
+                                segundoApellido
+                                fechaNacimiento
+                                numeroDocumento
+                            } 
+                            encuentros {
+                                id
+                                fecha
+                                printUrl
+                                detailUrl
+                                terminada
+                                canDelete
+                                formato { id, nombre }
+                                proveedor { id, nombreCompleto }
+                            }
+                            tratamiento: servicioPrestado { id, fechaFinTratamiento }
+                        } 
+                        formatos(activo: true) { 
+                            results(ordering: "nombre") { id, nombre @capitalize } 
+                        }
+                    }
+                </graphql-query>
+
+                <paciente-info full-width paciente="[[_serializePacient(result.sesion.paciente)]]"></paciente-info>
+                <br>
+
+                <paper-dialog opened="{{opened}}">
+                    <h2>Terminar Visita</h2>
+                    <div>¿Estas seguro que deseas terminar la visita?</div>
+                    <div class="actions">
+                        <paper-button dialog-dismiss>NO</paper-button>
+                        <paper-button dialog-confirm autofocus raised on-click="_endVisitConfirmed">SI</paper-button>
+                    </div>
+                </paper-dialog>
+
+                <div class="card">
+                    <p hidden$="[[!_isUltimaCita(result.sesion.tratamiento.fechaFinTratamiento, result.sesion.inicio)]]" class="last-date">ultima cita de tratamiento</p>  
+                    Fecha: [[_formatDate(result.sesion.inicio)]] Servicio: [[result.sesion.servicio.nombre]]
+                    <paper-menu-button hidden$="[[!result.sesion.canAddEncuentro]]">
+                        <paper-icon-button icon="my-icons:add" slot="dropdown-trigger"></paper-icon-button>
+                        <div role="listbox" slot="dropdown-content">
+                            <dom-repeat items="[[result.formatos.results]]">
+                                <template>
+                                    <a title="encuentros" href="[[_newEncounterURL(item.id)]]" tabindex="-1">
+                                    <paper-item>[[item.nombre]]</paper-item>
+                                    </a>
+                                </template>
+                            </dom-repeat>
+                        </div>
+                    </paper-menu-button>
+                    <paper-button toggles hidden$="[[!result.sesion.cumplida]]" on-click="_endVisit">Terminar visita</paper-button>
+                </div>
+                <vaadin-grid items="[[result.sesion.encuentros]]">
+                    <vaadin-grid-column>
+                        <template class="header">Fecha</template>
+                        <template>[[_formatDate(item.fecha)]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Historia</template>
+                        <template>[[item.formato.nombre]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column>
+                        <template class="header">Medico</template>
+                        <template>[[item.proveedor.nombreCompleto]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column flex-grow="0">
+                        <template class="header">Cerrada</template>
+                        <template>[[_formatCerrada(item.terminada)]]</template>
+                    </vaadin-grid-column>
+                    <vaadin-grid-column flex-grow="0" width="150px">
+                        <template class="header"></template>
+                        <template>
+                            <div style="display: flex;">
+                                <a title="ver encuentro" href="[[item.detailUrl]]" tabindex="-1">
+                                    <paper-icon-button icon="my-icons:remove-red-eye"></paper-icon-button>
+                                </a>
+                                <template is="dom-if" if="[[item.canDelete]]">
+                                    <paper-icon-button icon="my-icons:delete" on-tap="_deleteEncounter"></paper-icon-button>
+                                </template>
+                                <template is="dom-if" if="[[item.printUrl]]">
+                                    <a title="ver encuentro" href="[[item.printUrl]]" tabindex="-1">
+                                        <paper-icon-button icon="my-icons:print"></paper-icon-button>
+                                    </a>
+                                </template>
+                            </div>
+                        </template>
+                    </vaadin-grid-column>
+                </vaadin-grid>
+            `;
+        }
+
+        /**
+            * Use for one-time configuration of your component after local DOM is
+            * initialized.
+            */
+        ready() {
+            super.ready();
+            this.client = this.shadowRoot.querySelector('graphql-query')._getClient();
+        }
+
+        _isUltimaCita(lastDate, citaDate) {
+            return moment(lastDate).diff(moment(citaDate), 'days') === 0;
+        }
+
+        _verTerminar(atendida, cancelada) {
+            return !atendida && !cancelada;
+        }
+
+        /**
+            * Sets las variables para obtener la sesión.
+            *
+            * @param {string} sesion Id del cliente.
+            * @return {object}
+            */
+        _setSesionVariables(sesion) {
+            return sesion ? { sesion } : {};
+        }
+
+        /**
+            * Sets la URL para agregar una nueva historia con el formato indicado.
+            *
+            * @param {string} formato Id del formato.
+            * @return {string}
+            */
+        _newEncounterURL(formato) {
+            return this.dataset.encuentroUrl.replace(new RegExp('0$'), formato);
+        }
+
+        /**
+            * Sets the patient data as needed by paciente-info component.
+            *
+            * @param {string} paciente Id del cliente.
+            * @return {object}
+            */
+        _serializePacient(paciente) {
+            return {
+                foto: paciente.foto,
+                edit_link: paciente.editUrl,
+                primer_nombre: paciente.primerNombre,
+                tipo_documento: paciente.tipoDocumento,
+                segundo_nombre: paciente.segundoNombre,
+                primer_apellido: paciente.primerApellido,
+                segundo_apellido: paciente.segundoApellido,
+                fecha_nacimiento: paciente.fechaNacimiento,
+                numero_documento: paciente.numeroDocumento,
+            };
+        }
+
+        /**
+            * Formatea la fecha
+            *
+            * @param {string} date Fecha a formatear.
+            * @return {string}
+            */
+        _formatDate(date) {
+            return moment(date).format('DD-MM-YYYY hh:mm A');
+        }
+
+        /**
+            * Formatea si el encuentro esta cerrado.
+            *
+            * @param {boolean} cerrada
+            * @return {string}
+            */
+        _formatCerrada(cerrada) {
+            return cerrada ? 'SI' : 'NO';
+        }
+
+        /**
+            * Termina la visita
+            *
+            * @param {string} visita Id de la visita/sesión.
+            */
+        _terminaVisita(visita) {
+            const endVisitMutation = Apollo.gql`mutation terminarVisita($visita: ID!) {
+                terminarVisita(id: $visita) {
+                    cita {
+                        id
+                        terminada
+                    }
+                }
+            }`;
+
+            this.client.mutate({
+                mutation: endVisitMutation,
+                variables: { visita },
+            })
+                .then(() => { window.location = this.dataset.agendaUrl; });
+        }
+
+        /**
+            * Verifica si se puede terminar la visita
+            */
+        _canEndVisit() {
+            return (
+                this.result.sesion.encuentros.length > 0 &&
+                this.result.sesion.encuentros.every(value => value.terminada)
+            );
+        }
+
+        /**
+            * Trigger cuando el usuario desea terminar la visita. Muestra el modal de confirmación.
+            */
+        _endVisit() {
+            if (this._canEndVisit()) {
+                this.opened = true;
+            } else {
+                this.dispatchEvent(new CustomEvent('notify-toast-error', {
+                    bubbles: true,
+                    composed: true,
+                    detail: {
+                        text: 'No puedes terminar la visita. Aún hay historias sin cerrar',
+                    },
+                }));
+            }
+        }
+
+        /**
+            * Trigger cuando el usuario confirma que desea terminar la visita.
+            */
+        _endVisitConfirmed() {
+            this._terminaVisita(this.sesionId);
+        }
+
+        /**
+            * Borra el encuentro.
+            *
+            * @param {String} enceuntro ID del encuentro a borrar.
+            */
+        _borrarEncuentro(encuentro) {
+            const deleteEncounterMutation = Apollo.gql`mutation borrarEncuentro($encuentro: ID!) {
+                borrarEncuentro(id: $encuentro) {
+                    ok
+                    historia { id }
+                }
+            }`;
+
+            this.client.mutate({
+                mutation: deleteEncounterMutation,
+                variables: { encuentro },
+                refetchQueries: ['historiaSesionPageQuery'],
+            });
+        }
+
+        /**
+            * Trigger cuando el usuario desea borrar un encuentro.
+            */
+        _deleteEncounter(e) {
+            this._borrarEncuentro(e.model.item.id);
+        }
+    }
+
+    window.customElements.define(MedhisHistoriasSesion.is, MedhisHistoriasSesion);
+</script>

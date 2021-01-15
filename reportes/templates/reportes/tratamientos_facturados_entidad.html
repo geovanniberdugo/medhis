@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}Tratamientos facturados por entidad{% endblock title %}
+
+{% block content %}
+<header>
+    <h1>{% trans "Tratamientos facturados por entidad" %}</h1>
+</header>
+
+<mh-tratamientos-facturados-entidad></mh-tratamientos-facturados-entidad>
+{% endblock content %}
+
+{% block js %}
+<script type="module" src="{% static 'build/pages/mh-tratamientos-facturados-entidad.js' %}"></script>
+{% endblock js %}
